@@ -1,0 +1,22 @@
+{
+  "name": "rezkycodes",
+  "owner": {
+    "name": "rezkycodes",
+    "url": "https://github.com/rezkycodes"
+  },
+  "description": "rezkycodes' Claude Code skills, as an installable plugin marketplace.",
+  "plugins": [
+    {
+      "name": "grill-prd",
+      "source": "./",
+      "description": "Grill a product idea until it is precise, then write a PRD with stack, data model and a phased feature map.",
+      "category": "productivity",
+      "keywords": [
+        "prd",
+        "planning",
+        "grilling",
+        "feature-map"
+      ]
+    }
+  ]
+}

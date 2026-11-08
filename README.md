@@ -36,9 +36,64 @@ Use it when you want to write, refine, or validate a PRD, or plan a new app or f
 
 ## Installation
 
-### Option 1: Install with `npx skills` (recommended)
+Pick **one** route below. The plugin is a managed, read-only bundle. The `npx skills` route copies files you own and edit. Installing both gives you the skill twice.
 
-The [`skills`](https://www.npmjs.com/package/skills) CLI installs skills directly from GitHub into Claude Code.
+### Option 1: Claude Code plugin (recommended, updates itself)
+
+Requires Claude Code 2.1.275 or later. Inside Claude Code, run:
+
+```
+/plugin install grill-prd --marketplace rezkycodes/grill-prd
+```
+
+The plugin is read from this repo's own marketplace (`.claude-plugin/marketplace.json`). It updates when a new version is released, because the Release workflow bumps `version` in `.claude-plugin/plugin.json`.
+
+### Option 2: `npx skills` (copies editable files, manual updates)
+
+The [`skills`](https://www.npmjs.com/package/skills) CLI copies the skill from GitHub into your project. Use this if you want to edit the skill, or if you use a harness other than Claude Code's plugin system.
+
+**Project-level** (run from your project root):
+
+```bash
+npx skills@latest add rezkycodes/grill-prd -a claude-code
+```
+
+**Global** (for every project, in your user directory):
+
+```bash
+npx skills@latest add rezkycodes/grill-prd -a claude-code -g
+```
+
+Update an installed copy, and check what is installed:
+
+```bash
+npx skills@latest update grill-prd
+npx skills@latest list
+```
+
+Remove it:
+
+```bash
+npx skills@latest remove grill-prd -a claude-code
+```
+
+Useful options for `add`:
+
+| Option | Purpose |
+|---|---|
+| `-a, --agent claude-code` | Install only for Claude Code |
+| `-g, --global` | Install to your user directory instead of the project |
+| `-s, --skill grill-prd` | Select the skill by name (needed only if the repo has several) |
+| `-y, --yes` | Skip confirmation prompts |
+| `-l, --list` | List the skills in the repo without installing |
+
+To see what the repo offers before installing:
+
+```bash
+npx skills@latest add rezkycodes/grill-prd --list
+```
+
+Restart Claude Code, or open a new session, after installing so the skill is picked up.
 
 **Project-level** (only the current project, run from the project root):
 
@@ -71,18 +126,18 @@ npx skills remove grill-prd -a claude-code
 
 Restart Claude Code (or open a new session) after installing so the skill is picked up.
 
-### Option 2: Manual copy
+### Option 3: Manual copy
 
-The skill is a single file, `SKILL.md`.
+The skill is a single file, [`skills/productivity/grill-prd/SKILL.md`](./skills/productivity/grill-prd/SKILL.md).
 
 ```bash
 # Global
 mkdir -p ~/.claude/skills/grill-prd
-cp SKILL.md ~/.claude/skills/grill-prd/SKILL.md
+cp skills/productivity/grill-prd/SKILL.md ~/.claude/skills/grill-prd/SKILL.md
 
 # Project-level
 mkdir -p .claude/skills/grill-prd
-cp SKILL.md .claude/skills/grill-prd/SKILL.md
+cp skills/productivity/grill-prd/SKILL.md .claude/skills/grill-prd/SKILL.md
 ```
 
 Keep the frontmatter at the top of `SKILL.md`. Claude Code uses `name` and `description` to decide when to invoke the skill:
@@ -310,14 +365,55 @@ Schema rules:
 - `dependsOn` contains only existing feature IDs.
 - `stack.mode`: `ai | user`. Each layer's `source`: `user | ai | assumption`.
 
+## Skills
+
+Skills are grouped into buckets under `skills/`. Only promoted buckets ship in the plugin.
+
+### Productivity
+
+General workflow tools, not code-specific.
+
+**Model-invoked** (the agent can reach for them when a task fits):
+
+- **[grill-prd](./skills/productivity/grill-prd/SKILL.md)**: Grill a product idea one question at a time, then write a precise PRD with stack, data model and a phased feature map.
+
+Docs page: [docs/productivity/grill-prd.md](./docs/productivity/grill-prd.md).
+
 ## Repository structure
 
 ```
 grill-prd/
-├── SKILL.md    # Skill definition (frontmatter + full instructions)
-├── README.md   # This document
-└── LICENSE     # MIT license
+├── .agents/                  # Shared notes for agents: install block, invocation rules, docs-writing guide
+├── .changeset/               # Pending changesets for the next release
+├── .claude-plugin/           # Claude Code plugin and marketplace manifests
+│   ├── marketplace.json
+│   └── plugin.json
+├── .github/                  # Issue templates and workflows (release, triage, needs-info)
+├── .out-of-scope/            # Requests this repo has decided not to take
+├── docs/
+│   └── productivity/
+│       └── grill-prd.md      # Human-facing docs page for the skill
+├── scripts/                  # link-skills.sh, list-skills.sh, sync-plugin-version.mjs
+├── skills/
+│   └── productivity/
+│       ├── README.md         # Bucket index
+│       └── grill-prd/
+│           ├── SKILL.md      # Skill definition (frontmatter + full instructions)
+│           └── agents/
+│               └── openai.yaml   # Codex UI metadata
+├── AGENTS.md                 # Symlink to CLAUDE.md
+├── CHANGELOG.md
+├── CLAUDE.md                 # Rules for working in this repo
+├── CONTRIBUTING.md
+├── GLOSSARY.md               # Vocabulary used by the skill
+├── LICENSE                   # MIT license
+├── README.md                 # This document
+├── SCOPE.md                  # The bar every issue is judged against
+├── package.json
+└── package-lock.json
 ```
+
+Contributors: read [CONTRIBUTING.md](./CONTRIBUTING.md) and [SCOPE.md](./SCOPE.md) before filing an issue. Version history is in [CHANGELOG.md](./CHANGELOG.md).
 
 ## FAQ
 
