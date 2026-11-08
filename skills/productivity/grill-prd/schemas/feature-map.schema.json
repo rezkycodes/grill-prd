@@ -1,0 +1,132 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rezkycodes/grill-prd/schemas/feature-map.schema.json",
+  "title": "grill-prd feature map",
+  "description": "Structure of feature-map.json. Cross-references (modules, phases, dependsOn, roles, phase order) are checked by scripts/check-feature-map.mjs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["project", "phases", "stack", "architecture", "roles", "features"],
+  "properties": {
+    "$schema": { "type": "string" },
+    "project": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["name", "slug", "status", "version"],
+      "properties": {
+        "name": { "$ref": "#/$defs/text" },
+        "slug": { "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "status": { "enum": ["planning", "in_progress", "done", "archived"] },
+        "version": { "$ref": "#/$defs/text" }
+      }
+    },
+    "phases": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "goal"],
+        "properties": {
+          "id": { "type": "integer", "minimum": 1 },
+          "name": { "$ref": "#/$defs/text" },
+          "goal": { "$ref": "#/$defs/text" }
+        }
+      }
+    },
+    "stack": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "frontend", "backend", "database", "deployment"],
+      "properties": {
+        "mode": { "enum": ["ai", "user"] },
+        "frontend": {
+          "description": "One decision, or one per target when there are several frontends (web, admin, mobile, desktop).",
+          "oneOf": [
+            { "$ref": "#/$defs/decision" },
+            { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/targetedDecision" } }
+          ]
+        },
+        "backend": { "$ref": "#/$defs/decision" },
+        "database": { "$ref": "#/$defs/decision" },
+        "deployment": { "$ref": "#/$defs/decision" },
+        "extras": {
+          "description": "Supporting choices from B6: packageManager, orm, auth, storage, queue, …",
+          "type": "object",
+          "additionalProperties": { "$ref": "#/$defs/decision" }
+        }
+      }
+    },
+    "architecture": { "$ref": "architecture.schema.json" },
+    "roles": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": { "$ref": "#/$defs/text" }
+    },
+    "features": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/feature" }
+    }
+  },
+  "$defs": {
+    "text": { "type": "string", "minLength": 1 },
+    "source": { "enum": ["user", "ai", "assumption"] },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choice", "source", "reason"],
+      "properties": {
+        "choice": { "$ref": "#/$defs/text" },
+        "source": { "$ref": "#/$defs/source" },
+        "reason": { "$ref": "#/$defs/text" }
+      }
+    },
+    "targetedDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["target", "choice", "source", "reason"],
+      "properties": {
+        "target": { "enum": ["web", "admin", "mobile", "desktop", "other"] },
+        "choice": { "$ref": "#/$defs/text" },
+        "source": { "$ref": "#/$defs/source" },
+        "reason": { "$ref": "#/$defs/text" }
+      }
+    },
+    "feature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "module", "phase", "status", "priority", "roles", "dependsOn", "subFeatures"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^F-[A-Z0-9]+$" },
+        "name": { "$ref": "#/$defs/text" },
+        "icon": { "description": "A lucide icon name, e.g. layout-grid.", "type": "string", "pattern": "^[a-z0-9]+(-[a-z0-9]+)*$" },
+        "module": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "phase": { "type": "integer", "minimum": 1 },
+        "status": { "enum": ["planned", "in_progress", "done", "dropped"] },
+        "priority": { "$ref": "#/$defs/priority" },
+        "roles": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/text" } },
+        "dependsOn": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^F-[A-Z0-9]+$" } },
+        "subFeatures": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/subFeature" } }
+      }
+    },
+    "subFeature": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "name", "priority", "acceptanceCriteria", "entities"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^F-[A-Z0-9]+-[0-9]{2}$" },
+        "name": { "$ref": "#/$defs/text" },
+        "priority": { "$ref": "#/$defs/priority" },
+        "acceptanceCriteria": {
+          "type": "array",
+          "minItems": 1,
+          "items": { "type": "string", "pattern": "^Given\\b.*\\bWhen\\b.*\\bThen\\b" }
+        },
+        "entities": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/text" } },
+        "endpoints": { "type": "array", "items": { "$ref": "#/$defs/text" } }
+      }
+    },
+    "priority": { "enum": ["must", "should", "could", "wont"] }
+  }
+}
