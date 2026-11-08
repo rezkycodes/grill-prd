@@ -1,6 +1,6 @@
 {
   "name": "grill-prd",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "Grill a product idea until it is precise, then write a PRD with stack, data model and a phased feature map.",
   "author": {
     "name": "rezkycodes",
