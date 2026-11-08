@@ -16,6 +16,7 @@ Use it when you want to write, refine, or validate a PRD, or plan a new app or f
 - [Workflow](#workflow)
 - [Design tree](#design-tree)
 - [Default stack and layer catalog](#default-stack-and-layer-catalog)
+- [Architecture catalog](#architecture-catalog)
 - [Precision rules](#precision-rules)
 - [Output](#output)
 - [Repository structure](#repository-structure)
@@ -29,10 +30,11 @@ Use it when you want to write, refine, or validate a PRD, or plan a new app or f
 - **Progressive grilling**: questions come one at a time, ordered by dependency rather than by template.
 - **A recommendation on every question**: reply `ok` to accept it.
 - **Automatic stack compatibility check**: flags conflicting choices (for example, Laravel on Vercel) and proposes fixes.
+- **Architecture decisions**: domain design, software architecture, repository strategy (with monorepo tooling such as Bun workspaces, pnpm + Turborepo, or Nx), application architecture, and design patterns, each justified by a requirement and checked for over-engineering.
 - **Phase dependency check**: a feature never sits in an earlier phase than a feature it depends on.
 - **Decision Log** in a short ADR format, so every decision is recorded with its reason.
 - **Two outputs**: `PRD.md` for humans and `feature-map.json` for rendering, ticket generation, or scaffolding.
-- **`Let AI pick` mode**: if you have no stack yet, the skill chooses defaults that fit your requirements and explains why.
+- **`Let AI pick` mode**: if you have no stack or architecture yet, the skill chooses defaults that fit your requirements and explains why.
 
 ## Installation
 
@@ -215,19 +217,20 @@ If your Claude Code has an interactive multiple-choice tool, questions with disc
 | `batch mode` | Allow up to 4 independent questions at once |
 | `skip` | Fill the answer with the recommendation, mark it `[ASSUMPTION]`, and add it to Open Questions |
 | `enough, write the PRD` | Stop grilling and write the PRD now |
-| `Let AI pick` | Hand one stack layer to the skill |
+| `Let AI pick` | Hand one stack layer or architecture dimension to the skill |
 
 ## Workflow
 
 ```
-TP (tech preferences)
-   │
-   ▼
-B1 Problem & users ─► B2 Actors & access ─► B3 Scope & feature map
+B1 Problem & users ─► TP Tech preferences ─► B2 Actors & access
                                                    │
    ┌───────────────────────────────────────────────┘
    ▼
-B4 Flows & business rules ─► B5 Data model ─► B6 Stack & architecture
+B3 Scope & feature map ─► B4 Flows & business rules ─► B5 Data model
+                                                   │
+   ┌───────────────────────────────────────────────┘
+   ▼
+AR Architecture ─► B6 Stack & architecture
                                                    │
                                                    ▼
                        B7 NFRs ─► B8 Release phases & dependency validation
@@ -256,7 +259,8 @@ Each branch is complete when its **exit criteria** are met.
 | **B3 — Scope & feature map** | Features derived from the B1 job, MoSCoW priorities, non-goals, data source for each feature | Every feature has a goal, role, sub-features, priority; every piece of data has a source |
 | **B4 — Flows & business rules** | Happy path, edge cases (empty data, payment failure, duplicates, cancellation, expiry), state machines, pricing rules | Every sub-feature has Given/When/Then acceptance criteria; every status has transitions and triggers |
 | **B5 — Data model** | Entities, relations, cardinality, owners, soft vs. hard delete, audit trail, files and media, personal data | Final ERD; every sub-feature maps to the entities it reads or writes |
-| **B6 — Stack & architecture** | Unchosen layers, ORM, auth, storage, topology, external integrations | Every component has a reason tied to a requirement; architecture diagram; folder structure |
+| **AR — Architecture** | `AI pick` or choose yourself; then, in order: domain design, software architecture, repository strategy (+ monorepo tooling), application architecture, design patterns | Five dimensions recorded with source and reason; every feature mapped to a module; monorepo tooling chosen if monorepo; no fit-check conflicts |
+| **B6 — Stack & architecture** | Unchosen layers, ORM, auth, storage, external integrations; applies the AR decisions to deployment and folder structure | Every component has a reason tied to a requirement; architecture diagram; folder structure consistent with AR |
 | **B7 — NFRs** | Performance (p95), scale, availability, security, observability, deployment, cost estimate | Every NFR has a number or a verifiable rule |
 | **B8 — Release phases** | Grouping features into phases; Phase 1 must be an end-to-end vertical slice | No dependency violations; each phase has a goal and a definition of done |
 
@@ -266,7 +270,7 @@ Each branch is complete when its **exit criteria** are met.
 
 | Layer | Default | Choose an alternative when |
 |---|---|---|
-| Runtime & monorepo | Bun + TypeScript, Nx monorepo | Small single app → single repo |
+| Runtime | Bun + TypeScript | Team or host requires Node.js → Node.js LTS |
 | API | Hono (Bun / Cloudflare Workers) | Bun-only and need end-to-end types → ElysiaJS; very high throughput → Go Fiber; PHP team or heavy admin CRUD → Laravel |
 | Public web | Next.js App Router (SSR/SSG for SEO) | No SEO needed → React + Vite or Vue |
 | Admin dashboard | React + Vite or Vue | Very simple admin → protected routes in the same app |
@@ -280,14 +284,14 @@ Each branch is complete when its **exit criteria** are met.
 
 ### Layer catalog (options for TP)
 
-| Layer | Options |
-|---|---|
-| Frontend | Next.js · React (Vite) · TanStack Start · React Router 7 / Remix · Astro · Vue.js · Nuxt · SvelteKit · Angular · None (API only) |
-| Backend | Next.js Route Handlers / Server Actions · Nuxt server · Node.js (Express / Fastify / NestJS) · Hono · ElysiaJS (Bun) · Deno · Python (FastAPI / Django) · Go (Fiber / Echo) · Rust (Axum / Actix) · Laravel (PHP) · BaaS (Supabase / Firebase) |
-| Database | PostgreSQL · Neon · Supabase · Prisma Postgres · MySQL · PlanetScale · SQLite / Turso · Cloudflare D1 · MongoDB · Firebase Firestore · Redis (cache/queue, not primary) |
-| Deployment | Vercel · Netlify · Cloudflare (Workers / Pages) · Railway · Render · Fly.io · AWS · GCP (Cloud Run) · Azure (App Service) · Hetzner Cloud · DigitalOcean · VPS (manual) · Coolify · Docker / Kubernetes |
+| Layer | Purpose | Options |
+|---|---|---|
+| Frontend | UI & user-facing screens | Next.js · React (Vite) · TanStack Start · React Router 7 / Remix · Astro · Vue.js · Nuxt · Svelte · SvelteKit · Solid / SolidStart · Qwik · Angular · HTMX + Server-rendered · Flutter · React Native · Expo (React Native) · SwiftUI (iOS native) · Jetpack Compose (Android native) · Tauri (desktop) · Electron (desktop) |
+| Backend | Logic & API server | Node.js (Express/Fastify) · NestJS · Hono · Elysia (Bun) · Bun runtime · Deno · Python (FastAPI/Django) · Go (Fiber/Echo) · Rust (Axum/Actix) · Laravel (PHP) · Ruby on Rails · Java (Spring Boot) · .NET (ASP.NET Core) · Cloudflare Workers · Edge Functions (Vercel/Netlify) · Convex (BaaS) · Supabase (BaaS) · Firebase (BaaS) · Appwrite (BaaS) · Pocketbase (BaaS) |
+| Database | Data storage | PostgreSQL · Neon (serverless Postgres) · Supabase (Postgres) · Prisma Postgres · MySQL · PlanetScale (MySQL) · SQLite · Turso (libSQL) · Cloudflare D1 · MongoDB · Firebase / Firestore · Convex · Redis / Upstash · DynamoDB · CockroachDB · ClickHouse (analytics) · Xata |
+| Deployment | Hosting & infrastructure | Vercel · Netlify · Cloudflare Pages / Workers · Railway · Render · Fly.io · Koyeb · Northflank · Deno Deploy · AWS (Amplify/ECS/Lambda) · Google Cloud (Cloud Run) · Azure (App Service) · Hetzner Cloud · DigitalOcean (App Platform) · VPS (manual) · Coolify (self-host PaaS) · Docker / Kubernetes (self-host) |
 
-The catalog is not exhaustive. You can type any other technology, and the skill will verify that it is still maintained before recommending it.
+The catalog is not exhaustive. You can type any other technology, and the skill will verify that it is still maintained before recommending it. It also accepts "same as frontend" for full-stack frameworks, "none" for API-only products, several frontends at once (web, admin, mobile, desktop), and pre-fills the database when you pick a BaaS backend.
 
 ### Compatibility checks
 
@@ -305,6 +309,54 @@ The skill runs these checks after TP and again in B6. Examples:
 | Self-hosted (VPS, Coolify, Docker/K8s) | Who handles backups, TLS, monitoring, updates? Kubernetes for a small app is flagged as over-engineering |
 | Users concentrated in one region | Pick host and DB regions close to users; keep the app and DB in the same region |
 | Free or minimal budget | Check free-tier limits (sleeping instances, connection limits, storage caps) |
+| Mobile frontend (Flutter, React Native, Expo, SwiftUI, Jetpack Compose) | Needs a real API and token-based auth; app-store distribution is asked separately |
+| HTMX + Server-rendered | The backend renders HTML; a JS full-stack framework on top is redundant |
+| Backend = Cloudflare Workers or Edge Functions | Deployment is fixed to that platform; CPU-time limits and HTTP database access |
+| BaaS backend + a different database | Usually a contradiction, because the BaaS owns the data |
+| ClickHouse or Redis / Upstash as the only database | Analytics or cache stores, not a primary database |
+
+## Architecture catalog
+
+Asked in branch **AR**, after the data model (B5) and before the stack (B6), because each choice must be justified by scope, data, team size and scale. The five dimensions depend on each other, so they are asked one at a time in this order.
+
+| # | Dimension | Options (abridged) |
+|---|---|---|
+| AR.1 | Domain design | Transaction script / CRUD · Anemic model + service layer · DDD-lite (bounded contexts as modules) · Full DDD (strategic + tactical) · Event storming to discover contexts |
+| AR.2 | Software architecture | Monolith · Modular monolith · Microservices · Serverless / functions · Event-driven · BaaS-centric · Micro-frontends |
+| AR.3 | Repository strategy | Single repo · Monorepo · Polyrepo · Hybrid |
+| AR.4 | Application architecture | Layered · MVC / framework-idiomatic · Feature-based / vertical slice · Clean · Hexagonal (ports & adapters) · Onion · CQRS · Feature-Sliced Design (frontend) · Atomic design (frontend UI) |
+| AR.5 | Design patterns (multi-select) | Repository · Unit of Work · Service layer · Use case · Command handler · Aggregate · Value object · Domain event · Adapter · Anti-corruption layer · Outbox · Idempotency key · Saga · Strategy · State machine · Pub-Sub · Dependency injection · CQRS · Event sourcing · DTO + schema validation · BFF · … |
+
+### Monorepo tooling
+
+When you choose **Monorepo** in AR.3, the skill asks which tooling. A monorepo usually needs a **workspace manager** and optionally a **task runner / build system**.
+
+| Tooling | Type |
+|---|---|
+| Bun workspaces · pnpm workspaces · npm workspaces · Yarn workspaces | Workspace manager (JS/TS) |
+| Nx | Task runner + build system, project graph, module-boundary rules; works on top of any workspace manager; polyglot via plugins |
+| Turborepo | Task runner + caching (JS/TS focused) |
+| moon (moonrepo) | Polyglot task runner + toolchain manager |
+| Lerna (powered by Nx) | Package versioning and publishing |
+| Rush | Large JS/TS monorepos with strict policies |
+| Bazel · Buck2 · Pants | Hermetic, polyglot build systems |
+| Cargo workspaces · Go workspaces (`go.work`) · uv workspaces · Gradle / Maven multi-module · .NET solution · Composer path repositories | Language-native workspaces |
+
+Typical pairings: `Bun workspaces + Nx`, `pnpm workspaces + Turborepo`, `pnpm workspaces + Nx`, `npm workspaces + Turborepo`, and Nx or moon for polyglot repos.
+
+### Architecture fit checks
+
+| Combination | What is checked |
+|---|---|
+| Microservices + 1–3 developers or no independent scaling need | Flagged as over-engineering; a modular monolith is recommended |
+| Microservices sharing one database | Distributed monolith; one database per service, or stay modular |
+| Full DDD or event sourcing for a CRUD-heavy product | Flagged as over-engineering |
+| Polyrepo + shared contracts | Versioned packages needed; a monorepo is suggested |
+| Monorepo with mixed languages + a JS-only task runner | Use Nx, moon, Bazel, or language-native workspaces |
+| Monorepo with one deployable and no shared packages | Single repo until a second app appears |
+| Runtime's package manager ≠ workspace manager | Must match (for example Bun runtime + Bun workspaces) |
+| Event-driven or outbox without a queue/broker in the stack | Add one in B6, or drop the pattern |
+| A feature not mapped to any module | Fix the boundary or the feature before the PRD is written |
 
 ## Precision rules
 
@@ -322,13 +374,15 @@ Before the PRD is written, the skill checks:
 - Every sub-feature maps to entities (B5), endpoints (if any), and roles (B2).
 - No unmeasured adjectives: "fast" → `p95 < 500 ms`; "a lot" → `≤ 5,000 designs`.
 - Every stack choice has a "Reason" that refers to a requirement, not taste.
+- Every feature belongs to exactly one module / bounded context.
+- Every design pattern names where it applies and the problem it solves.
 - A feature with no role, no data source, or no link to the B1 job is proposed for removal or moved to Non-goals.
 
 ## Output
 
 Two artifacts are produced:
 
-1. **`PRD.md`**: the full document, with 13 sections (summary, problem and JTBD, goals and metrics, actors and role matrix, feature map, feature specifications, data model, API surface, architecture and stack, NFRs, phase plan, decision log, assumptions and open questions).
+1. **`PRD.md`**: the full document, with 13 sections (summary, problem and JTBD, goals and metrics, actors and role matrix, feature map, feature specifications, data model, API surface, architecture (domain, software, repository, application, patterns) and stack, NFRs, phase plan, decision log, assumptions and open questions).
 2. **`feature-map.json`**: a structured schema for rendering a feature map, turning features into tickets, or scaffolding.
 
 Inside a codebase they are saved to:
@@ -355,11 +409,28 @@ Outside a codebase, both are delivered as documents in the chat.
     "database": { "choice": "PostgreSQL", "source": "ai" },
     "deployment": { "choice": "VPS (Coolify)", "source": "ai" }
   },
+  "architecture": {
+    "mode": "user",
+    "domainDesign": { "choice": "DDD-lite", "source": "ai" },
+    "softwareArchitecture": { "choice": "Modular monolith", "source": "ai" },
+    "repositoryStrategy": { "choice": "Monorepo", "tooling": "Bun workspaces + Nx", "source": "user" },
+    "applicationArchitecture": [
+      { "deployable": "api", "choice": "Vertical slice (handler → service → repository)", "source": "ai" }
+    ],
+    "modules": [
+      { "id": "catalog", "name": "Catalog", "owns": ["Design", "Category"] },
+      { "id": "pricing", "name": "Pricing", "owns": ["DesignPrice", "PriceHistory"] }
+    ],
+    "designPatterns": [
+      { "pattern": "State machine", "where": "Order.status", "problem": "Only valid status transitions" }
+    ]
+  },
   "roles": ["guest", "admin"],
   "features": [
     {
       "id": "F-GAL",
       "name": "Design Gallery",
+      "module": "catalog",
       "phase": 1,
       "status": "planned",
       "priority": "must",
@@ -389,6 +460,8 @@ Schema rules:
 - Stable IDs: `F-<CODE>` for features, `F-<CODE>-NN` for sub-features. The same ID is used in `PRD.md` and the JSON.
 - `dependsOn` contains only existing feature IDs.
 - `stack.mode`: `ai | user`. Each layer's `source`: `user | ai | assumption`.
+- `architecture.mode`: `ai | user`. Each dimension's `source`: `user | ai | assumption`. `repositoryStrategy.tooling` is set only for a monorepo.
+- Every feature's `module` matches an `architecture.modules[].id`.
 
 ## Skills
 
@@ -450,6 +523,12 @@ Choose `Let AI pick`. The skill selects defaults that fit your requirements in B
 
 **What if I already have a stack in mind?**
 Name your choices per layer in the TP stage. Your picks are treated as constraints. If there's a conflict, the skill asks you before changing anything.
+
+**Why is architecture asked so late?**
+Because a choice such as microservices or full DDD is only right if the scope, data and team justify it. By the time AR starts, the skill knows the features, rules and entities, so it can say *why* it recommends, for example, a modular monolith in a Bun workspaces + Nx monorepo.
+
+**I picked "Monorepo". What happens next?**
+The skill asks which tooling: a workspace manager (Bun, pnpm, npm, Yarn) and optionally a task runner or build system (Nx, Turborepo, moon, Bazel, …), recommended to match your runtime and languages.
 
 **Does the skill write code?**
 No. It produces the PRD and feature map only. Implementation comes afterward.

@@ -9,7 +9,7 @@ The interview method: one question per turn, each with a recommended answer, wal
 _Avoid_: quiz, questionnaire (a questionnaire is a batch of questions answered async)
 
 **Design tree**:
-The ordered set of branches the grilling walks: B1 (problem and users), TP (tech preferences), B2 (actors), B3 (scope), B4 (flows), B5 (data), B6 (stack), B7 (NFRs), B8 (release phases).
+The ordered set of branches the grilling walks: B1 (problem and users), TP (tech preferences), B2 (actors), B3 (scope), B4 (flows), B5 (data), AR (architecture), B6 (stack), B7 (NFRs), B8 (release phases).
 _Avoid_: question list, checklist
 
 **Branch**:
@@ -28,8 +28,21 @@ Either `ai` (the skill picks every layer) or `user` (the user picked at least on
 **Compatibility check**:
 The pass over a chosen stack that flags conflicting combinations (for example, a long-running backend on a serverless host) and turns each conflict into a question.
 
+**Architecture dimension**:
+One of the five decisions in branch AR, asked in this order because each depends on the one before: domain design, software architecture, repository strategy, application architecture, design patterns. Like stack layers, each records a **source** and a reason; **Architecture mode** is `ai` or `user` on the same rule as stack mode.
+
+**Module**:
+A bounded context or module from the domain design. Every feature belongs to exactly one module, and a module owns its entities.
+_Avoid_: service (a service is a deployable unit, decided by the software architecture)
+
+**Repository strategy**:
+How code is split across repositories: single repo, monorepo, polyrepo, or hybrid. A monorepo also records its **monorepo tooling**: a workspace manager (Bun, pnpm, npm, Yarn) and optionally a task runner or build system (Nx, Turborepo, moon, Bazel).
+
+**Architecture fit check**:
+The pass over the architecture that flags choices the scope does not justify (for example, microservices for a single developer) and turns each into a question.
+
 **Feature**:
-A capability in the feature map, with an ID of the form `F-<CODE>`, a role, a priority, a phase, and dependencies.
+A capability in the feature map, with an ID of the form `F-<CODE>`, a module, a role, a priority, a phase, and dependencies.
 
 **Sub-feature**:
 A testable slice of a feature, with an ID of the form `F-<CODE>-NN` and at least one acceptance criterion.
@@ -59,6 +72,8 @@ The structured `feature-map.json` output: phases, stack, roles, and features wit
 - A **Stack mode** of `user` fixes the layers the user chose; the rest are filled by the **Compatibility check**
 - A **Feature** has one or more **Sub-features**, each with **Acceptance criteria**
 - The **Phase dependency check** runs over the **Phases** of all features before the PRD is written
+- The domain design defines the **Modules**; each **Feature** belongs to one **Module**
+- A **Repository strategy** of monorepo requires a choice of monorepo tooling; the **Architecture fit check** runs once all five **Architecture dimensions** are set
 
 ## Flagged ambiguities
 
