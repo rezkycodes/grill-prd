@@ -1,0 +1,23 @@
+{
+  "name": "grill-prd",
+  "version": "0.1.0",
+  "description": "Grill a product idea until it is precise, then write a PRD with stack, data model and a phased feature map.",
+  "author": {
+    "name": "rezkycodes",
+    "url": "https://github.com/rezkycodes"
+  },
+  "homepage": "https://github.com/rezkycodes/grill-prd",
+  "repository": "https://github.com/rezkycodes/grill-prd",
+  "license": "MIT",
+  "keywords": [
+    "prd",
+    "product",
+    "planning",
+    "grilling",
+    "feature-map",
+    "productivity"
+  ],
+  "skills": [
+    "./skills/productivity/grill-prd"
+  ]
+}

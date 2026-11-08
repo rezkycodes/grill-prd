@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Question or "how do I...?"
+    url: https://github.com/rezkycodes/grill-prd/discussions
+    about: Ask in Discussions. Issues are for bugs and changes to the existing skill only.
+  - name: Is my request out of scope?
+    url: https://github.com/rezkycodes/grill-prd/blob/main/SCOPE.md
+    about: The bar every issue must clear, and the requests this repo has already decided not to take.
