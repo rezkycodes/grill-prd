@@ -126,7 +126,32 @@ npx skills remove grill-prd -a claude-code
 
 Restart Claude Code (or open a new session) after installing so the skill is picked up.
 
-### Option 3: Manual copy
+### Option 3: Antigravity IDE and `agy` CLI
+
+Antigravity reads skills from `.agents/skills/`. Install with the `antigravity` agent for the IDE, the `antigravity-cli` agent for `agy`, or both:
+
+**Project-level** (run from your project root):
+
+```bash
+npx skills@latest add rezkycodes/grill-prd -a antigravity antigravity-cli
+```
+
+**Global** (for every project, in your user directory):
+
+```bash
+npx skills@latest add rezkycodes/grill-prd -a antigravity antigravity-cli -g
+```
+
+Update and remove work the same way as in Option 2:
+
+```bash
+npx skills@latest update grill-prd
+npx skills@latest remove grill-prd -a antigravity antigravity-cli
+```
+
+Project installs go to `.agents/skills/grill-prd/`. The global paths are `~/.gemini/antigravity/skills/` (IDE) and `~/.gemini/antigravity-cli/skills/` (`agy`). Restart Antigravity or start a new `agy` session after installing.
+
+### Option 4: Manual copy
 
 The skill is a single file, [`skills/productivity/grill-prd/SKILL.md`](./skills/productivity/grill-prd/SKILL.md).
 
