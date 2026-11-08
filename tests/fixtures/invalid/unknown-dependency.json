@@ -70,6 +70,21 @@
   },
   "architecture": {
     "mode": "user",
+    "complexity": {
+      "factors": {
+        "C1": 0,
+        "C2": 1,
+        "C3": 2,
+        "C4": 0,
+        "C5": 0,
+        "C6": 1,
+        "C7": 1,
+        "C8": 2
+      },
+      "total": 7,
+      "tier": "Standard",
+      "notes": "Driven by C3 (price rules and an order state machine) and C8 (multi-year, steady change). One developer and a few hundred users keep C1, C4 and C5 at 0."
+    },
     "domainDesign": {
       "choice": "DDD-lite",
       "source": "ai",

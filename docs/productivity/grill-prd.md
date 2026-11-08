@@ -16,7 +16,10 @@ Reach for this when the idea is still fuzzy and you want the gaps found before c
 Yes. Pick per layer (frontend, backend, database, deployment) early in the interview, and per architecture dimension (domain design, software architecture, repository strategy, application architecture, design patterns) once the data model is known. Your picks are kept as constraints; a conflict is raised as a question, never changed silently.
 
 **Why does it question my architecture choices?**
-Architecture is asked after scope and data on purpose: a recommendation must point at a requirement. Choices that the scope does not justify, such as microservices for one developer or full DDD for a CRUD catalog, are flagged as over-engineering.
+Architecture is asked after scope and data on purpose: a recommendation must point at a requirement. Before the first architecture question the skill scores your product on eight factors it already knows — team size, modules, rules, scale, independent scaling, integrations, async work, lifetime — and that tier is what "over-engineering" is measured against. Microservices for one developer, or full DDD for a CRUD catalog, land several steps above their tier and get flagged.
+
+**Can I still choose something the score says is too much?**
+Yes. The tier decides what gets recommended first, not what you are allowed to pick. One step above is free when a single factor justifies it; beyond that the skill asks for the requirement and records it in the Decision Log.
 
 **Why doesn't it ask me about serverless or BaaS in the architecture step?**
 Because you already answered it when you picked the host and backend. Architecture is a combination of decisions, not one dropdown: the skill asks for the topology and, when it matters, how the parts communicate, and derives the rest from your stack for you to confirm.
@@ -38,4 +41,5 @@ A **run-once planning step**. It sits before implementation: the `feature-map.js
 - Acceptance criteria are Given/When/Then, and vague words such as "fast" have been replaced with numbers.
 - Conflicts between the stack you chose and the requirements show up as questions, before the PRD is written.
 - Every feature belongs to one module, every design pattern names the problem it solves, and the folder structure matches the repository strategy you chose.
+- The complexity tier appears in the PRD, and anything built above it names the requirement that pays for it.
 - The checker reports no errors on the `feature-map.json` you receive.

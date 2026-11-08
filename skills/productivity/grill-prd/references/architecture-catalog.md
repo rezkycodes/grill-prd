@@ -2,6 +2,10 @@
 
 Read this file when you reach AR (architecture) and again in B6 (stack). Not exhaustive — the user may name any other approach.
 
+Contents: [Definitions](#definitions) · [Default Architecture Profile](#default-architecture-profile) · [AR.1 Domain design](#ar1--domain-design) · [AR.2 Software architecture](#ar2--software-architecture) · [AR.3 Repository strategy](#ar3--repository-strategy) ([monorepo tooling](#monorepo-tooling), [language mapping](#language--tooling-mapping)) · [AR.4 Application architecture](#ar4--application-architecture) · [AR.5 Design patterns](#ar5--design-patterns) · [Architecture Fit Check](#architecture-fit-check)
+
+Score the complexity tier first ([complexity-assessment.md](./complexity-assessment.md)); it sets which column of each table you recommend from.
+
 ## Definitions
 
 The five AR dimensions sit at different levels. Keep them apart: a question about one level never answers another.
@@ -18,7 +22,7 @@ The five AR dimensions sit at different levels. Keep them apart: a question abou
 
 ## Default Architecture Profile
 
-The `➡️ Recommendation` when nothing in B1–B5 argues otherwise.
+The `➡️ Recommendation` at **Standard** tier, which is where most products land. At another tier, start from that tier's row in [complexity-assessment.md](./complexity-assessment.md#what-each-tier-recommends) and use the tables below to refine it.
 
 | Dimension | Default | Choose the alternative when |
 |---|---|---|
@@ -155,14 +159,16 @@ Run after AR.5 and again in B6. Each hit becomes a grilling question with a reco
 
 | If the architecture has… | Then check / ask |
 |---|---|
-| Microservices + 1–3 developers or no independent scaling need | Flag over-engineering → recommend a modular monolith with clean module boundaries (can be split later). |
+| **Any dimension more than one step above its complexity tier, with no named requirement** | The general over-engineering rule; the rows below are its common cases. Ask for the requirement that pays for it, or step back down. |
+| Microservices + 1–3 developers or no independent scaling need (C1 and C5 low) | Flag over-engineering → recommend a modular monolith with clean module boundaries (can be split later). |
 | Microservices or service-based sharing one database | Anti-pattern (distributed monolith) → one database or schema per service, or stay modular monolith. |
-| Full DDD or event sourcing for a CRUD-heavy product | Flag over-engineering → DDD-lite; event sourcing only with a real audit/replay requirement. |
+| Full DDD or event sourcing for a CRUD-heavy product (C3 ≤ 1) | Flag over-engineering → DDD-lite; event sourcing only with a real audit/replay requirement. |
 | CQRS without a read/write asymmetry | Drop it, or limit it to the specific read model that needs it. |
 | Communication includes async events / queue, or the Outbox pattern is chosen, but no broker/queue is in the stack | Add the broker/queue to the stack (B6) or drop the async part. |
 | Communication includes realtime push + execution model is serverless functions | Persistent connections don't fit → managed realtime service or a long-running service for that part. |
 | Derived execution model, backend ownership, or frontend composition contradicts a TP answer | Never override silently — show both and ask which one stands. |
 | Micro-frontends with one frontend team | Flag over-engineering → single app with feature folders. |
+| An orchestrator (Nx, moon, Bazel) in a Minimal-tier repo with two packages | The config costs more than it saves → plain workspaces until builds are actually slow. |
 | Polyrepo + shared contracts/types | Versioned packages and release coordination needed → consider a monorepo. |
 | Monorepo with mixed languages + a JS-only orchestrator (e.g. Turborepo alone) | Use a polyglot orchestrator (Nx with plugins, moon, Bazel) or orchestrate each native workspace separately, and pick a language-neutral contract (OpenAPI, protobuf). |
 | Monorepo with only one deployable and no shared packages | Tooling overhead without benefit → single repo until a second app appears. |

@@ -11,6 +11,13 @@ import { readFileSync } from "node:fs";
 import { pathToFileURL } from "node:url";
 
 const MONOREPO_CHOICES = new Set(["Monorepo", "Hybrid"]);
+// Totals map to tiers as defined in references/complexity-assessment.md.
+const TIERS = [
+  { tier: "Minimal", min: 0, max: 5 },
+  { tier: "Standard", min: 6, max: 11 },
+  { tier: "Elevated", min: 12, max: 17 },
+  { tier: "High", min: 18, max: 24 },
+];
 
 const arr = (v) => (Array.isArray(v) ? v : []);
 const isObj = (v) => v !== null && typeof v === "object" && !Array.isArray(v);
@@ -122,6 +129,22 @@ export function checkFeatureMap(map) {
     const n = appArchCount.get(id) ?? 0;
     if (n !== 1) err("deployable-architecture", "architecture.applicationArchitecture", `deployable "${id}" has ${n} application architecture entries (expected exactly 1)`);
   });
+
+  // ---- complexity assessment ----
+  const cx = arch.complexity;
+  if (isObj(cx) && isObj(cx.factors)) {
+    const scores = Object.values(cx.factors);
+    if (scores.every((v) => typeof v === "number")) {
+      const sum = scores.reduce((a, b) => a + b, 0);
+      if (cx.total !== sum) {
+        err("complexity-total", "architecture.complexity.total", `total is ${cx.total} but the factors add up to ${sum}`);
+      }
+      const expected = TIERS.find((t) => sum >= t.min && sum <= t.max)?.tier;
+      if (expected && cx.tier !== expected) {
+        err("complexity-tier", "architecture.complexity.tier", `total ${sum} is tier "${expected}", not "${cx.tier}"`);
+      }
+    }
+  }
 
   const repo = arch.repositoryStrategy;
   if (isObj(repo)) {

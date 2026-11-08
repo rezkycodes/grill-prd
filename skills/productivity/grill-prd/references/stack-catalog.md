@@ -2,6 +2,8 @@
 
 Read this file when you reach TP (tech preferences) and again in B6 (stack).
 
+Contents: [Default Stack Profile](#default-stack-profile) · [Layer Catalog](#layer-catalog-options-for-tp) · [Compatibility Check](#compatibility-check)
+
 ## Default Stack Profile
 
 Use as the `➡️ Recommendation` in B6. Always state when to deviate. Adjust this table to your team's stack. (The Default Architecture Profile is in [architecture-catalog.md](./architecture-catalog.md).)
