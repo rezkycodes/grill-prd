@@ -28,6 +28,13 @@ Either `ai` (the skill picks every layer) or `user` (the user picked at least on
 **Compatibility check**:
 The pass over a chosen stack that flags conflicting combinations (for example, a long-running backend on a serverless host) and turns each conflict into a question.
 
+**Complexity assessment**:
+The eight-factor score (C1–C8, 0–3 each) computed from B1–B5 before AR.1. Its **total** maps to a **tier** — Minimal, Standard, Elevated or High — which is the baseline for every architecture recommendation and the yardstick the architecture fit check uses for over-engineering.
+_Avoid_: estimate, story points (this scores the product's shape, not the effort to build it)
+
+**Tier**:
+One of Minimal, Standard, Elevated or High. A decision **one step above** its tier is free when a single factor justifies it; further above, it needs a named requirement in the decision log.
+
 **Architecture dimension**:
 One of the five decisions in branch AR, asked in this order because each depends on the one before: domain design, software architecture, repository strategy, application architecture, design patterns. Like stack layers, each records a **source** and a reason; **Architecture mode** is `ai` or `user` on the same rule as stack mode.
 
@@ -90,6 +97,7 @@ The dependency-free script (`scripts/check-feature-map.mjs` in the skill) that c
 - A **Feature** has one or more **Sub-features**, each with **Acceptance criteria**
 - The **Phase dependency check** runs over the **Phases** of all features before the PRD is written
 - The domain design defines the **Modules**; each **Feature** belongs to one **Module**
+- The **Complexity assessment** runs before AR.1 and its **Tier** sets the baseline for every **Architecture dimension**
 - **Software architecture** produces the **Deployables**; each **Deployable** has exactly one **Application architecture**
 - A **Repository strategy** of monorepo requires a choice of monorepo tooling; the **Architecture fit check** runs once all five **Architecture dimensions** are set
 - The **Feature map checker** runs on the **Feature map** before it is handed over

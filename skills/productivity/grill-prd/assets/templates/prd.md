@@ -1,6 +1,6 @@
 # PRD.md template
 
-Read this file when the Definition of Ready is met and you are writing the PRD.
+Read this file when the Definition of Ready is met and you are writing the PRD. For section 9.3 use [repository-structure.md](./repository-structure.md); for a decision that is expensive to reverse and was contested, use [architecture-decision.md](./architecture-decision.md) in section 12.
 
 ```markdown
 # PRD — <Product Name>
@@ -56,6 +56,10 @@ Non-goals:
 
 ### 9.1 Architecture
 Architecture mode: <ai | user>
+
+Complexity: **<total>/24 — <tier>** (C1 <n> · C2 <n> · C3 <n> · C4 <n> · C5 <n> · C6 <n> · C7 <n> · C8 <n>)
+<one line: the factors that drove the tier, and anything deliberately placed above or below it>
+
 | Dimension | Choice | Source (user / ai) | Reason (requirement it satisfies) |
 |---|---|---|---|
 | Domain design | | | |

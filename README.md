@@ -30,6 +30,7 @@ Use it when you want to write, refine, or validate a PRD, or plan a new app or f
 - **Progressive grilling**: questions come one at a time, ordered by dependency rather than by template.
 - **A recommendation on every question**: reply `ok` to accept it.
 - **Automatic stack compatibility check**: flags conflicting choices (for example, Laravel on Vercel) and proposes fixes.
+- **Complexity assessment**: an eight-factor score, computed from your own answers, that sets the baseline for every architecture recommendation — so "modular monolith" or "microservices" is a judgement with a number behind it, not taste.
 - **Architecture decisions**: domain design, software architecture, repository strategy (with monorepo tooling such as Bun workspaces, pnpm + Turborepo, or Nx), application architecture, and design patterns, each justified by a requirement and checked for over-engineering.
 - **Phase dependency check**: a feature never sits in an earlier phase than a feature it depends on.
 - **Decision Log** in a short ADR format, so every decision is recorded with its reason.
@@ -124,7 +125,7 @@ Project installs go to `.agents/skills/grill-prd/`. The global paths are `~/.gem
 
 ### Option 4: Manual copy
 
-The skill is the folder [`skills/productivity/grill-prd/`](./skills/productivity/grill-prd/): `SKILL.md` plus the `references/`, `schemas/`, `examples/` and `scripts/` it reads during a session. Copy the whole folder, not only `SKILL.md`.
+The skill is the folder [`skills/productivity/grill-prd/`](./skills/productivity/grill-prd/): `SKILL.md` plus the `references/`, `assets/`, `schemas/`, `examples/` and `scripts/` it reads during a session. Copy the whole folder, not only `SKILL.md`.
 
 ```bash
 # Global
@@ -228,7 +229,7 @@ Each branch is complete when its **exit criteria** are met.
 | **B3 — Scope & feature map** | Features derived from the B1 job, MoSCoW priorities, non-goals, data source for each feature | Every feature has a goal, role, sub-features, priority; every piece of data has a source |
 | **B4 — Flows & business rules** | Happy path, edge cases (empty data, payment failure, duplicates, cancellation, expiry), state machines, pricing rules | Every sub-feature has Given/When/Then acceptance criteria; every status has transitions and triggers |
 | **B5 — Data model** | Entities, relations, cardinality, owners, soft vs. hard delete, audit trail, files and media, personal data | Final ERD; every sub-feature maps to the entities it reads or writes |
-| **AR — Architecture** | `AI pick` or choose yourself; then, in order: domain design, software architecture (topology and communication asked; execution model, backend ownership and frontend composition derived from TP), repository strategy (+ monorepo tooling), application architecture per deployable, design patterns | Every dimension recorded with source and reason; deployables listed with one application architecture each; every feature mapped to a module; monorepo tooling chosen if monorepo; no fit-check conflicts |
+| **AR — Architecture** | `AI pick` or choose yourself; a complexity score that sets the baseline; then, in order: domain design, software architecture (topology and communication asked; execution model, backend ownership and frontend composition derived from TP), repository strategy (+ monorepo tooling), application architecture per deployable, design patterns | Complexity total and tier recorded; every dimension recorded with source and reason; deployables listed with one application architecture each; every feature mapped to a module; monorepo tooling chosen if monorepo; no fit-check conflicts |
 | **B6 — Stack & architecture** | Unchosen layers, ORM, auth, storage, external integrations; applies the AR decisions to deployment and folder structure | Every component has a reason tied to a requirement; architecture diagram; folder structure consistent with AR |
 | **B7 — NFRs** | Performance (p95), scale, availability, security, observability, deployment, cost estimate | Every NFR has a number or a verifiable rule |
 | **B8 — Release phases** | Grouping features into phases; Phase 1 must be an end-to-end vertical slice | No dependency violations; each phase has a goal and a definition of done |
@@ -290,6 +291,19 @@ Asked in branch **AR**, after the data model (B5) and before the stack (B6), bec
 
 **Software architecture** means the system level (which deployables exist and how they talk). **Application architecture** means the code level inside one deployable. Books and teams use these words differently; the skill keeps your words in the conversation but records decisions under these definitions.
 
+### Complexity assessment
+
+Before the first architecture question, the skill scores your product on eight factors it already knows from B1–B5 — team size, modules, business rules, scale, independent scaling or release, integrations, async work, and lifetime — each 0–3. It shows the total and tier for an `ok`; you are not asked to score anything.
+
+| Total | Tier | What it recommends |
+|---|---|---|
+| 0–5 | Minimal | CRUD, monolith, single repo, framework defaults |
+| 6–11 | Standard | DDD-lite, modular monolith, vertical slice, a small pattern set |
+| 12–17 | Elevated | Enforced boundaries, async where it is needed, clean/hexagonal where integrations are heavy |
+| 18–24 | High | Microservices along context boundaries, async by default, explicit contracts |
+
+The tier is the baseline for every recommendation that follows, and it is what the fit check measures over-engineering against: **one step above the tier is free** when a single factor scored 3 and points at it; more than that needs a named requirement in the Decision Log. "We might scale later" does not count. The full rubric is [`references/complexity-assessment.md`](./skills/productivity/grill-prd/references/complexity-assessment.md).
+
 | # | Dimension | How it is set | Options (abridged) |
 |---|---|---|---|
 | AR.1 | Domain design | Asked | Transaction script / CRUD · Anemic model + service layer · DDD-lite (bounded contexts as modules) · Full DDD · Event storming to discover contexts |
@@ -330,6 +344,7 @@ The skill derives the languages from your TP answers and filters the tooling wit
 
 | Combination | What is checked |
 |---|---|
+| **Any dimension more than one step above its complexity tier, with no named requirement** | The general rule; the rows below are its common cases |
 | Microservices + 1–3 developers or no independent scaling need | Flagged as over-engineering; a modular monolith is recommended |
 | Microservices or service-based sharing one database | Distributed monolith; one database per service, or stay modular |
 | Full DDD or event sourcing for a CRUD-heavy product | Flagged as over-engineering |
@@ -445,6 +460,21 @@ The full, valid example is [`examples/feature-map.example.json`](./skills/produc
   },
   "architecture": {
     "mode": "user",
+    "complexity": {
+      "factors": {
+        "C1": 0,
+        "C2": 1,
+        "C3": 2,
+        "C4": 0,
+        "C5": 0,
+        "C6": 1,
+        "C7": 1,
+        "C8": 2
+      },
+      "total": 7,
+      "tier": "Standard",
+      "notes": "Driven by C3 (price rules and an order state machine) and C8 (multi-year, steady change). One developer and a few hundred users keep C1, C4 and C5 at 0."
+    },
     "domainDesign": {
       "choice": "DDD-lite",
       "source": "ai",
@@ -616,6 +646,7 @@ Schema rules (the [schema files](./skills/productivity/grill-prd/schemas/) are a
 - Stable IDs: `F-<CODE>` for features, `F-<CODE>-NN` for sub-features, the same in `PRD.md` and the JSON. Acceptance criteria start with `Given … When … Then`.
 - Every stack layer and architecture decision is `{ "choice", "source", "reason" }` with `source`: `user | ai | assumption`. Derived software-architecture values also carry `derivedFrom` (the stack layer they follow from). `choice` is free text, except `repositoryStrategy.choice`: `Single repo | Monorepo | Polyrepo | Hybrid`.
 - `stack.mode` and `architecture.mode`: `ai | user` (`user` as soon as you picked at least one item).
+- `architecture.complexity` holds the eight factors (0–3), the `total` and the `tier`; the total must equal the sum and the tier must match it.
 - `repositoryStrategy.tooling` (workspace manager, optional orchestrator, language workspaces, shared contracts) is required for `Monorepo` and `Hybrid`, and absent otherwise.
 - Every feature's `module` matches an `architecture.modules[].id`; every deployable has exactly one `applicationArchitecture` entry; `dependsOn` points to existing features in the same or an earlier phase.
 
@@ -627,7 +658,7 @@ The skill runs its own dependency-free checker before handing `feature-map.json`
 node skills/productivity/grill-prd/scripts/check-feature-map.mjs docs/prd/<slug>/feature-map.json
 ```
 
-It reports cross-reference problems a JSON Schema cannot catch: unknown modules, phases, roles or dependencies, sub-feature IDs that don't match their feature, dependency cycles, the phase dependency check, deployables without an application architecture, monorepo tooling on a non-monorepo, and `mode` values that contradict the recorded sources.
+It reports cross-reference problems a JSON Schema cannot catch: unknown modules, phases, roles or dependencies, sub-feature IDs that don't match their feature, dependency cycles, the phase dependency check, deployables without an application architecture, monorepo tooling on a non-monorepo, a complexity total or tier that disagrees with the factors, and `mode` values that contradict the recorded sources.
 
 ## Skills
 
@@ -663,7 +694,9 @@ grill-prd/
 │       ├── README.md         # Bucket index
 │       └── grill-prd/        # The skill: this whole folder is what gets installed
 │           ├── SKILL.md      # Skill definition (frontmatter + interview instructions)
-│           ├── references/   # Stack catalog, architecture catalog, PRD template (read on demand)
+│           ├── references/   # Read on demand: stack catalog, complexity rubric, architecture catalog
+│           ├── assets/
+│           │   └── templates/    # PRD, architecture decision (ADR), repository structure
 │           ├── schemas/      # JSON Schemas for feature-map.json and its architecture block
 │           ├── examples/     # A complete, valid feature-map.json
 │           ├── scripts/      # check-feature-map.mjs (dependency-free cross-reference checker)
@@ -697,7 +730,10 @@ Choose `Let AI pick`. The skill selects defaults that fit your requirements in B
 Name your choices per layer in the TP stage. Your picks are treated as constraints. If there's a conflict, the skill asks you before changing anything.
 
 **Why is architecture asked so late?**
-Because a choice such as microservices or full DDD is only right if the scope, data and team justify it. By the time AR starts, the skill knows the features, rules and entities, so it can say *why* it recommends, for example, a modular monolith with DDD-lite instead of microservices.
+Because a choice such as microservices or full DDD is only right if the scope, data and team justify it. By the time AR starts, the skill knows the features, rules and entities, so it can score the complexity and say *why* it recommends, for example, a modular monolith with DDD-lite instead of microservices.
+
+**What if I want an architecture the score says is too much?**
+You get it. The tier only sets what the skill recommends first and what it calls over-engineering. Going more than one step above it costs one line in the Decision Log naming the requirement that pays for it — a number, a rule, or a constraint, not an expectation of growth.
 
 **Will it ask me about serverless or BaaS again after I picked my stack?**
 No. The execution model, backend ownership and frontend composition follow from your TP answers; the skill states them and asks for `ok`. It only asks again if a derived value contradicts something you said.

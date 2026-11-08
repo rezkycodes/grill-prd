@@ -17,8 +17,11 @@ Read each file when the step that needs it starts, not up front.
 | File | Read when |
 |---|---|
 | [references/stack-catalog.md](./references/stack-catalog.md) | TP starts, and again in B6 — Default Stack Profile, layer catalog, stack compatibility check |
+| [references/complexity-assessment.md](./references/complexity-assessment.md) | AR starts, before AR.1 — the rubric that sets the baseline for every AR recommendation |
 | [references/architecture-catalog.md](./references/architecture-catalog.md) | AR starts, and again in B6 — definitions, Default Architecture Profile, AR options, monorepo tooling, language mapping, architecture fit check |
-| [references/prd-template.md](./references/prd-template.md) | Writing `PRD.md` |
+| [assets/templates/prd.md](./assets/templates/prd.md) | Writing `PRD.md` |
+| [assets/templates/repository-structure.md](./assets/templates/repository-structure.md) | Writing the folder structure in B6 / PRD section 9.3 |
+| [assets/templates/architecture-decision.md](./assets/templates/architecture-decision.md) | Writing up a decision that is expensive to reverse and was contested |
 | [schemas/feature-map.schema.json](./schemas/feature-map.schema.json) and [schemas/architecture.schema.json](./schemas/architecture.schema.json) | Writing `feature-map.json` |
 | [examples/feature-map.example.json](./examples/feature-map.example.json) | Writing `feature-map.json` — a complete, valid example |
 | [scripts/check-feature-map.mjs](./scripts/check-feature-map.mjs) | Checking `feature-map.json` before handing it over |
@@ -133,7 +136,8 @@ Architecture is decided after scope (B3), flows (B4) and data (B5) are known, be
 
 | # | Dimension | How it is set | Depends on |
 |---|---|---|---|
-| AR.1 | Domain design → modules / bounded contexts | Asked | B3 features, B4 rules, B5 entities |
+| AR.C | Complexity assessment → tier | **Scored by you** from B1–B5, shown for `ok` | B1 team, B3 scope, B4 rules, B5 data |
+| AR.1 | Domain design → modules / bounded contexts | Asked | AR.C tier, B3 features, B4 rules, B5 entities |
 | AR.2a | Software architecture — deployment topology | Asked | AR.1 modules, team size, scale |
 | AR.2b | Software architecture — communication | Asked only with > 1 deployable or async flows from B4 (multi-select) | AR.2a, B4 |
 | AR.2c | Software architecture — execution model | **Derived** from TP Deployment, confirmed with `ok` | TP |
@@ -154,8 +158,11 @@ Options: (1) Let AI pick  (2) Choose myself
 - **Let AI pick** → still walk every row, but present each as a recommendation the user confirms with `ok` (one line per dimension is enough). Record `architecture.mode = "ai"`.
 - **Choose myself** → ask each asked dimension with options from the catalog. Record `architecture.mode = "user"` (also when the user picks only some dimensions).
 
+Then, in both modes, run **AR.C** before AR.1: read [references/complexity-assessment.md](./references/complexity-assessment.md), score the eight factors from what B1–B5 already told you, and show the result as one short block — total, tier, and the two or three factors that drove it — for an `ok`. Score it yourself; ask only for a factor the earlier branches genuinely left open (usually team size). The tier is the baseline for every recommendation that follows, and it is what the fit check measures over-engineering against.
+
 Rules:
-- Every recommendation names the requirement that justifies it (e.g. "modular monolith: one developer, 4 bounded contexts, no independent scaling need").
+- Every recommendation names the requirement that justifies it, and says where it sits against the tier (e.g. "modular monolith: Standard tier, one developer, 4 bounded contexts, no independent scaling need").
+- A choice more than one step above its tier needs a **named requirement** in the Decision Log, not an expectation of growth. One step above is free when a single factor scored 3 and points at that dimension.
 - **AR.1** must produce a list of **modules / bounded contexts**, and every feature from B3 must belong to exactly one of them. A feature that fits none → rethink the boundary or the feature.
 - **AR.2c–e are never asked from scratch.** State the value derived from TP in one line and ask for `ok`. If the TP layer was left to AI, derive it in B6 once the stack is chosen, then confirm. A derived value that contradicts a TP answer is shown with both sides and asked — never overridden silently.
 - **AR.2 → deployables.** After AR.2, list the deployable units (e.g. `web`, `admin`, `api`, `mobile`, `worker`) with their kind and stack. AR.4 is asked once per deployable.
@@ -163,7 +170,7 @@ Rules:
 - **AR.5** is multi-select. Each pattern must name **where** it applies and **which problem** it solves. A pattern with no concrete problem is dropped.
 - Run the **Architecture Fit Check** after AR.5 and raise each hit as a grilling question.
 - Choices made here are constraints for B6 (folder structure, deployment) — just like TP picks.
-- **Exit criteria:** every dimension recorded with source (`user`, `ai`, `assumption`) and reason; deployables listed, each with one AR.4 entry; every feature mapped to a module; monorepo tooling recorded if monorepo; no unresolved fit-check hits.
+- **Exit criteria:** complexity total and tier recorded; every dimension recorded with source (`user`, `ai`, `assumption`) and reason; deployables listed, each with one AR.4 entry; every feature mapped to a module; monorepo tooling recorded if monorepo; no unresolved fit-check hits.
 
 ### B6 — Stack & architecture
 - Re-read [references/stack-catalog.md](./references/stack-catalog.md). Start from the TP answers: layers the user chose are fixed constraints; layers marked `ai` or skipped are filled from the **Default Stack Profile**, choosing options compatible with the user's picks.
@@ -171,7 +178,7 @@ Rules:
 - Then ask the supporting choices that depend on the four layers: package manager (JS/TS stacks — independent of the runtime), ORM / query layer (must match the backend language), auth, file storage, cache/queue/broker if AR.2b needs one.
 - Confirm any AR.2c–e value that could not be derived during AR.
 - Re-run the **Compatibility Check** and the **Architecture Fit Check** on the complete stack.
-- Apply the AR decisions: deployment follows AR.2; the folder structure follows the repository strategy and monorepo tooling (AR.3) and the application architecture per deployable (AR.4); module folders follow the bounded contexts (AR.1).
+- Apply the AR decisions: deployment follows AR.2; the folder structure follows the repository strategy and monorepo tooling (AR.3) and the application architecture per deployable (AR.4); module folders follow the bounded contexts (AR.1). Start the structure from [assets/templates/repository-structure.md](./assets/templates/repository-structure.md) and state the boundary rule in words beside the tree.
 - External integrations: payments (QRIS/virtual accounts), notifications (WhatsApp/Telegram/email), storage, maps.
 - Before naming a framework version, verify the latest stable version (official docs or an MCP such as Context7). Don't rely on memory.
 - **Exit criteria:** every stack component has a reason tied to a requirement; architecture diagram; folder structure consistent with AR.
@@ -224,6 +231,10 @@ Consequences: no WebSocket/chat infrastructure; chat history is not stored in th
 Status: Approved | [ASSUMPTION] if the user skipped
 ```
 
+Record the complexity total and tier as the first entry, so later decisions can refer to it.
+
+For a decision that is **expensive to reverse and was genuinely contested** — usually the topology, the repository strategy, a database that shapes the data model, or a pattern that changes how every module is written — use the longer form in [assets/templates/architecture-decision.md](./assets/templates/architecture-decision.md) instead. Expect one to three of those in a PRD; everything else stays short.
+
 When B8 is done, send a **shared-understanding summary** (problem, core value, roles, features per phase, stack, architecture, key decisions, assumptions) and ask for confirmation: "Does this match? I'll write the PRD." Do not write the PRD before it is confirmed.
 
 ---
@@ -236,6 +247,7 @@ When B8 is done, send a **shared-understanding summary** (problem, core value, r
 - [ ] Every feature: goal, role, priority, data source, 2–5 sub-features
 - [ ] Every sub-feature: acceptance criteria + entities
 - [ ] ERD + state machines for entities with a status
+- [ ] Complexity total and tier recorded, and every choice above its tier paid for by a named requirement
 - [ ] Architecture recorded (domain design, software architecture with all five sub-dimensions, repository strategy + monorepo tooling if any, application architecture per deployable, design patterns) and Architecture Fit Check passed
 - [ ] Every feature mapped to a module; every deployable has one application architecture
 - [ ] Stack with reasons, architecture diagram, folder structure
@@ -248,7 +260,7 @@ When B8 is done, send a **shared-understanding summary** (problem, core value, r
 ## 6. Output
 
 Produce **two artifacts**:
-1. `PRD.md` — the human-readable document. Follow [references/prd-template.md](./references/prd-template.md).
+1. `PRD.md` — the human-readable document. Follow [assets/templates/prd.md](./assets/templates/prd.md).
 2. `feature-map.json` — a structured feature schema to render as a feature map (root → phased features → sub-features), turn into tickets, or scaffold from. It must validate against [schemas/feature-map.schema.json](./schemas/feature-map.schema.json) (which references [schemas/architecture.schema.json](./schemas/architecture.schema.json)). Use [examples/feature-map.example.json](./examples/feature-map.example.json) as the model.
 
 When working in a codebase, save to `docs/prd/<slug>/PRD.md` and `docs/prd/<slug>/feature-map.json`. In chat, create them as a document.
@@ -259,13 +271,14 @@ When working in a codebase, save to `docs/prd/<slug>/PRD.md` and `docs/prd/<slug
 node <this skill's folder>/scripts/check-feature-map.mjs docs/prd/<slug>/feature-map.json
 ```
 
-It needs no dependencies and checks the cross-references a JSON Schema cannot: features point to existing modules, phases and features; sub-feature IDs match their feature; the Phase Dependency Check; one application architecture per deployable; monorepo tooling present only for a monorepo. Fix every error it reports. Without a shell, walk the same list by hand.
+It needs no dependencies and checks the cross-references a JSON Schema cannot: features point to existing modules, phases and features; sub-feature IDs match their feature; the Phase Dependency Check; one application architecture per deployable; monorepo tooling present only for a monorepo; the complexity total and tier agree with the factors. Fix every error it reports. Without a shell, walk the same list by hand.
 
 Schema essentials (the schema files are authoritative):
 - Stable IDs: `F-<CODE>` for features, `F-<CODE>-NN` for sub-features, the same in `PRD.md` and the JSON.
 - `status`: `planned | in_progress | done | dropped`. `priority`: `must | should | could | wont`. `icon`: a lucide icon name.
 - Every stack layer and architecture decision is `{ "choice", "source", "reason" }` with `source`: `user | ai | assumption`. `choice` is free text in the user's words, except `repositoryStrategy.choice`: `Single repo | Monorepo | Polyrepo | Hybrid`.
 - `stack.mode` and `architecture.mode`: `ai | user` (`user` as soon as the user picked at least one item).
+- `architecture.complexity` holds the eight factors (0–3 each), the `total`, and the `tier`; the total must equal the sum and the tier must match the total.
 - `repositoryStrategy.tooling` is required for `Monorepo` and `Hybrid`, and absent otherwise.
 - Every feature's `module` matches an `architecture.modules[].id`; every `architecture.deployables[].id` has exactly one `applicationArchitecture` entry.
 
@@ -288,8 +301,8 @@ Tech preferences in the same example — user chose "Choose myself", picked only
 8. **Compatibility conflict:** Laravel is a long-running PHP app and doesn't fit Vercel's serverless model. → Recommendation: Next.js on Vercel + Laravel API on a VPS/Coolify, or drop Laravel and use Next.js Route Handlers (one app, one deploy target). Ask which the user prefers.
 9. **Remaining layer:** Database left to AI → recommend PostgreSQL (orders and prices are relational), in a region close to Indonesian users, with Eloquent as the ORM if Laravel stays.
 
-Architecture in the same example — user chose "Choose myself" in AR and answered: microservices, full DDD, monorepo, Bun workspaces:
-10. **Over-engineering:** One developer, four small modules, no independent scaling need → recommend a modular monolith with DDD-lite; keep the module boundaries so a context can be split out later.
+Architecture in the same example — complexity scores 7/24 (Standard), and the user chose "Choose myself" in AR and answered: microservices, full DDD, monorepo, Bun workspaces:
+10. **Over-engineering:** Microservices and full DDD sit three steps above a Standard tier whose C1, C4 and C5 are all 0 → recommend a modular monolith with DDD-lite; keep the module boundaries so a context can be split out later.
 11. **Derived values:** Next.js on Vercel + Laravel on Coolify → execution model "mixed" (serverless web, long-running API); backend ownership "custom"; frontend composition "single app". State these and ask for `ok` instead of asking three new questions.
 12. **Polyglot monorepo:** TypeScript (Next.js) + PHP (Laravel) → Bun workspaces covers only the JS app. Recommend the JS package manager for `apps/web`, Composer for `apps/api`, an orchestrator that can run both (Nx or moon), and OpenAPI as the shared contract with a generated TS client.
 13. **Unmapped feature:** "Contact Admin" fits no module → put it in Ordering (it starts an order conversation) or make it a thin integration module; ask which.

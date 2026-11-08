@@ -7,6 +7,7 @@
   "additionalProperties": false,
   "required": [
     "mode",
+    "complexity",
     "domainDesign",
     "softwareArchitecture",
     "deployables",
@@ -17,6 +18,35 @@
   ],
   "properties": {
     "mode": { "$ref": "#/$defs/mode" },
+    "complexity": {
+      "description": "AR.C: the complexity assessment that sets the baseline for every other decision. `total` must equal the sum of the factors and `tier` must match it — checked by scripts/check-feature-map.mjs.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["factors", "total", "tier"],
+      "properties": {
+        "factors": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["C1", "C2", "C3", "C4", "C5", "C6", "C7", "C8"],
+          "properties": {
+            "C1": { "$ref": "#/$defs/score", "description": "People building it" },
+            "C2": { "$ref": "#/$defs/score", "description": "Modules / bounded contexts" },
+            "C3": { "$ref": "#/$defs/score", "description": "Business rules" },
+            "C4": { "$ref": "#/$defs/score", "description": "Scale" },
+            "C5": { "$ref": "#/$defs/score", "description": "Independent scaling or release" },
+            "C6": { "$ref": "#/$defs/score", "description": "External integrations" },
+            "C7": { "$ref": "#/$defs/score", "description": "Async & background work" },
+            "C8": { "$ref": "#/$defs/score", "description": "Lifetime & change rate" }
+          }
+        },
+        "total": { "type": "integer", "minimum": 0, "maximum": 24 },
+        "tier": { "enum": ["Minimal", "Standard", "Elevated", "High"] },
+        "notes": {
+          "description": "The two or three factors that drove the tier, and any choice deliberately placed above or below it.",
+          "$ref": "#/$defs/text"
+        }
+      }
+    },
     "domainDesign": { "$ref": "#/$defs/decision" },
     "softwareArchitecture": {
       "description": "AR.2: system level. Topology and communication are asked; the other three are derived from TP and confirmed.",
@@ -134,6 +164,7 @@
   "$defs": {
     "text": { "type": "string", "minLength": 1 },
     "slug": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "score": { "type": "integer", "minimum": 0, "maximum": 3 },
     "mode": { "enum": ["ai", "user"] },
     "source": { "enum": ["user", "ai", "assumption"] },
     "decision": {
