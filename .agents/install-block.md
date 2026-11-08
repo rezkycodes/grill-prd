@@ -32,6 +32,22 @@ npx skills@latest update grill-prd
 
 </canonical-block>
 
+## Antigravity IDE and agy CLI (skills.sh)
+
+Both agents read `.agents/skills/` in a project. Antigravity has no marketplace route for this repo yet, so these installs are manual: re-run `add` to update.
+
+<canonical-block name="antigravity">
+
+```bash
+npx skills@latest add rezkycodes/grill-prd -a antigravity antigravity-cli
+```
+
+```bash
+npx skills@latest update grill-prd
+```
+
+</canonical-block>
+
 ## The two routes are exclusive
 
 The plugin is a managed, read-only bundle. skills.sh writes files you own and edit. Installing both leaves you with the skill twice: pick one.
