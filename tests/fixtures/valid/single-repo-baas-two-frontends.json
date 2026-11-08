@@ -1,0 +1,397 @@
+{
+  "$schema": "../../../skills/productivity/grill-prd/schemas/feature-map.schema.json",
+  "project": {
+    "name": "Billboard Design Portal",
+    "slug": "billboard-design-portal",
+    "status": "planning",
+    "version": "0.1"
+  },
+  "phases": [
+    {
+      "id": 1,
+      "name": "MVP Catalog & Pricing",
+      "goal": "Village governments can browse designs with prices and contact the admin"
+    },
+    {
+      "id": 2,
+      "name": "Discovery",
+      "goal": "Village governments find the right design quickly"
+    },
+    {
+      "id": 3,
+      "name": "Ordering",
+      "goal": "Village governments place and track orders in the portal"
+    }
+  ],
+  "stack": {
+    "mode": "ai",
+    "frontend": [
+      {
+        "target": "web",
+        "choice": "Next.js",
+        "source": "ai",
+        "reason": "Public catalog needs SEO"
+      },
+      {
+        "target": "mobile",
+        "choice": "Expo (React Native)",
+        "source": "ai",
+        "reason": "Village operators work from phones"
+      }
+    ],
+    "backend": {
+      "choice": "Supabase (BaaS)",
+      "source": "ai",
+      "reason": "Small team, auth and storage included"
+    },
+    "database": {
+      "choice": "Supabase (Postgres)",
+      "source": "ai",
+      "reason": "Fixed by the Supabase backend"
+    },
+    "deployment": {
+      "choice": "Vercel",
+      "source": "ai",
+      "reason": "Next.js hosting with zero ops"
+    }
+  },
+  "architecture": {
+    "mode": "ai",
+    "domainDesign": {
+      "choice": "DDD-lite",
+      "source": "ai",
+      "reason": "Four sub-domains; real rules only in pricing and ordering"
+    },
+    "softwareArchitecture": {
+      "topology": {
+        "choice": "Monolith",
+        "source": "ai",
+        "reason": "One small team; Supabase holds the backend"
+      },
+      "communication": {
+        "choices": [
+          "Sync HTTP / RPC"
+        ],
+        "source": "ai",
+        "reason": "Apps call Supabase over HTTP"
+      },
+      "executionModel": {
+        "choice": "Serverless functions",
+        "source": "ai",
+        "reason": "Follows from Vercel",
+        "derivedFrom": "stack.deployment"
+      },
+      "backendOwnership": {
+        "choice": "BaaS",
+        "source": "ai",
+        "reason": "Follows from Supabase (BaaS)",
+        "derivedFrom": "stack.backend"
+      },
+      "frontendComposition": {
+        "choice": "Several apps",
+        "source": "ai",
+        "reason": "Web and mobile frontends",
+        "derivedFrom": "stack.frontend"
+      }
+    },
+    "deployables": [
+      {
+        "id": "web",
+        "kind": "frontend",
+        "stack": "Next.js"
+      },
+      {
+        "id": "mobile",
+        "kind": "mobile",
+        "stack": "Expo (React Native)"
+      }
+    ],
+    "repositoryStrategy": {
+      "choice": "Single repo",
+      "source": "ai",
+      "reason": "Two small apps, no shared packages yet"
+    },
+    "applicationArchitecture": [
+      {
+        "deployable": "web",
+        "choice": "Feature-based folders",
+        "source": "ai",
+        "reason": "Pages map to features"
+      },
+      {
+        "deployable": "mobile",
+        "choice": "Feature-based folders",
+        "source": "ai",
+        "reason": "Screens map to features"
+      }
+    ],
+    "modules": [
+      {
+        "id": "identity",
+        "name": "Identity",
+        "responsibility": "Admin accounts and sessions",
+        "owns": [
+          "AdminUser"
+        ]
+      },
+      {
+        "id": "catalog",
+        "name": "Catalog",
+        "responsibility": "Designs and categories",
+        "owns": [
+          "Design",
+          "Category"
+        ]
+      },
+      {
+        "id": "pricing",
+        "name": "Pricing",
+        "responsibility": "Current prices and their history",
+        "owns": [
+          "DesignPrice",
+          "PriceHistory"
+        ]
+      },
+      {
+        "id": "ordering",
+        "name": "Ordering",
+        "responsibility": "Contact and orders from village governments",
+        "owns": [
+          "Order"
+        ]
+      }
+    ],
+    "designPatterns": [
+      {
+        "pattern": "State machine",
+        "where": "Order.status",
+        "problem": "Only valid status transitions"
+      }
+    ]
+  },
+  "roles": [
+    "guest",
+    "admin"
+  ],
+  "features": [
+    {
+      "id": "F-AUTH",
+      "name": "Admin Login",
+      "icon": "log-in",
+      "module": "identity",
+      "phase": 1,
+      "status": "planned",
+      "priority": "must",
+      "roles": [
+        "admin"
+      ],
+      "dependsOn": [],
+      "subFeatures": [
+        {
+          "id": "F-AUTH-01",
+          "name": "Sign In",
+          "priority": "must",
+          "acceptanceCriteria": [
+            "Given a valid admin email and password, When the admin signs in, Then the dashboard opens and a session cookie is set"
+          ],
+          "entities": [
+            "AdminUser"
+          ],
+          "endpoints": [
+            "POST /api/auth/sign-in"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F-MDS",
+      "name": "Manage Designs",
+      "icon": "folder-cog",
+      "module": "catalog",
+      "phase": 1,
+      "status": "planned",
+      "priority": "must",
+      "roles": [
+        "admin"
+      ],
+      "dependsOn": [
+        "F-AUTH"
+      ],
+      "subFeatures": [
+        {
+          "id": "F-MDS-01",
+          "name": "Upload Design",
+          "priority": "must",
+          "acceptanceCriteria": [
+            "Given a signed-in admin, When they upload a JPG or PNG up to 10 MB with a name and category, Then the design is saved as active and appears in the gallery"
+          ],
+          "entities": [
+            "Design",
+            "Category"
+          ],
+          "endpoints": [
+            "POST /api/designs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F-PRC",
+      "name": "Set Pricing",
+      "icon": "tag",
+      "module": "pricing",
+      "phase": 1,
+      "status": "planned",
+      "priority": "must",
+      "roles": [
+        "admin"
+      ],
+      "dependsOn": [
+        "F-AUTH"
+      ],
+      "subFeatures": [
+        {
+          "id": "F-PRC-01",
+          "name": "Set Initial Price",
+          "priority": "must",
+          "acceptanceCriteria": [
+            "Given a design without a price, When the admin sets a price in IDR, Then the price is shown in the gallery and a history entry is recorded"
+          ],
+          "entities": [
+            "DesignPrice",
+            "PriceHistory"
+          ],
+          "endpoints": [
+            "PUT /api/designs/:id/price"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F-GAL",
+      "name": "Design Gallery",
+      "icon": "layout-grid",
+      "module": "catalog",
+      "phase": 1,
+      "status": "planned",
+      "priority": "must",
+      "roles": [
+        "guest"
+      ],
+      "dependsOn": [
+        "F-MDS",
+        "F-PRC"
+      ],
+      "subFeatures": [
+        {
+          "id": "F-GAL-01",
+          "name": "Design Catalog",
+          "priority": "must",
+          "acceptanceCriteria": [
+            "Given active designs exist, When a guest opens /designs, Then a grid of designs is shown with thumbnail, name, and starting price, newest first"
+          ],
+          "entities": [
+            "Design",
+            "DesignPrice"
+          ],
+          "endpoints": [
+            "GET /api/designs"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F-CON",
+      "name": "Contact Admin",
+      "icon": "message-circle",
+      "module": "ordering",
+      "phase": 1,
+      "status": "planned",
+      "priority": "must",
+      "roles": [
+        "guest"
+      ],
+      "dependsOn": [
+        "F-GAL"
+      ],
+      "subFeatures": [
+        {
+          "id": "F-CON-01",
+          "name": "Ask via WhatsApp",
+          "priority": "must",
+          "acceptanceCriteria": [
+            "Given a guest viewing a design, When they tap Ask via WhatsApp, Then WhatsApp opens with a prefilled message containing the design name and code"
+          ],
+          "entities": [
+            "Design"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F-SRC",
+      "name": "Design Search",
+      "icon": "search",
+      "module": "catalog",
+      "phase": 2,
+      "status": "planned",
+      "priority": "should",
+      "roles": [
+        "guest"
+      ],
+      "dependsOn": [
+        "F-GAL"
+      ],
+      "subFeatures": [
+        {
+          "id": "F-SRC-01",
+          "name": "Keyword Search",
+          "priority": "should",
+          "acceptanceCriteria": [
+            "Given 5,000 active designs, When a guest searches a keyword, Then matching designs are returned within p95 500 ms"
+          ],
+          "entities": [
+            "Design"
+          ],
+          "endpoints": [
+            "GET /api/designs?q="
+          ]
+        }
+      ]
+    },
+    {
+      "id": "F-ORD",
+      "name": "Design Ordering",
+      "icon": "shopping-cart",
+      "module": "ordering",
+      "phase": 3,
+      "status": "planned",
+      "priority": "should",
+      "roles": [
+        "guest",
+        "admin"
+      ],
+      "dependsOn": [
+        "F-GAL",
+        "F-PRC"
+      ],
+      "subFeatures": [
+        {
+          "id": "F-ORD-01",
+          "name": "Order Form",
+          "priority": "should",
+          "acceptanceCriteria": [
+            "Given a priced design, When a guest submits the order form with village name and WhatsApp number, Then an order is created with status submitted and the price at order time"
+          ],
+          "entities": [
+            "Order",
+            "DesignPrice"
+          ],
+          "endpoints": [
+            "POST /api/orders"
+          ]
+        }
+      ]
+    }
+  ]
+}

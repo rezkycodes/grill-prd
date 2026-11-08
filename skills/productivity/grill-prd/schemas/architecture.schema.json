@@ -1,0 +1,174 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/rezkycodes/grill-prd/schemas/architecture.schema.json",
+  "title": "grill-prd architecture",
+  "description": "The `architecture` block of feature-map.json: the AR branch decisions. Cross-references (feature → module, deployable → application architecture) are checked by scripts/check-feature-map.mjs.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "mode",
+    "domainDesign",
+    "softwareArchitecture",
+    "deployables",
+    "repositoryStrategy",
+    "applicationArchitecture",
+    "modules",
+    "designPatterns"
+  ],
+  "properties": {
+    "mode": { "$ref": "#/$defs/mode" },
+    "domainDesign": { "$ref": "#/$defs/decision" },
+    "softwareArchitecture": {
+      "description": "AR.2: system level. Topology and communication are asked; the other three are derived from TP and confirmed.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["topology", "communication", "executionModel", "backendOwnership", "frontendComposition"],
+      "properties": {
+        "topology": { "$ref": "#/$defs/decision" },
+        "communication": { "$ref": "#/$defs/multiDecision" },
+        "executionModel": { "$ref": "#/$defs/derivedDecision" },
+        "backendOwnership": { "$ref": "#/$defs/derivedDecision" },
+        "frontendComposition": { "$ref": "#/$defs/derivedDecision" }
+      }
+    },
+    "deployables": {
+      "description": "Deployable units that follow from AR.2. Each one gets exactly one applicationArchitecture entry.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "kind", "stack"],
+        "properties": {
+          "id": { "$ref": "#/$defs/slug" },
+          "kind": { "enum": ["frontend", "backend", "fullstack", "worker", "mobile", "desktop", "other"] },
+          "stack": { "$ref": "#/$defs/text" }
+        }
+      }
+    },
+    "repositoryStrategy": {
+      "description": "AR.3. `tooling` is required for Monorepo and Hybrid, and absent otherwise.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choice", "source", "reason"],
+      "properties": {
+        "choice": { "enum": ["Single repo", "Monorepo", "Polyrepo", "Hybrid"] },
+        "source": { "$ref": "#/$defs/source" },
+        "reason": { "$ref": "#/$defs/text" },
+        "tooling": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["workspaceManager"],
+          "properties": {
+            "workspaceManager": {
+              "description": "Package / workspace manager that owns the lockfile (e.g. 'pnpm workspaces', 'Bun workspaces', 'go.work'). Independent of the runtime.",
+              "$ref": "#/$defs/text"
+            },
+            "orchestrator": {
+              "description": "Optional task runner / build system (e.g. 'Nx', 'Turborepo', 'moon'). Use null for none.",
+              "type": ["string", "null"]
+            },
+            "languageWorkspaces": {
+              "description": "Language-native workspaces for non-JS code in the same repo (e.g. 'go.work', 'Composer path repositories').",
+              "type": "array",
+              "items": { "$ref": "#/$defs/text" }
+            },
+            "sharedContracts": {
+              "description": "How apps share contracts (e.g. 'Zod package', 'OpenAPI with generated TS client').",
+              "$ref": "#/$defs/text"
+            }
+          }
+        }
+      },
+      "if": { "properties": { "choice": { "enum": ["Monorepo", "Hybrid"] } } },
+      "then": { "required": ["tooling"] },
+      "else": { "not": { "required": ["tooling"] } }
+    },
+    "applicationArchitecture": {
+      "description": "AR.4: code level, one entry per deployable.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["deployable", "choice", "source", "reason"],
+        "properties": {
+          "deployable": { "$ref": "#/$defs/slug" },
+          "choice": { "$ref": "#/$defs/text" },
+          "source": { "$ref": "#/$defs/source" },
+          "reason": { "$ref": "#/$defs/text" }
+        }
+      }
+    },
+    "modules": {
+      "description": "AR.1 modules / bounded contexts. Every feature belongs to exactly one.",
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["id", "name", "owns"],
+        "properties": {
+          "id": { "$ref": "#/$defs/slug" },
+          "name": { "$ref": "#/$defs/text" },
+          "responsibility": { "$ref": "#/$defs/text" },
+          "owns": { "type": "array", "items": { "$ref": "#/$defs/text" } }
+        }
+      }
+    },
+    "designPatterns": {
+      "description": "AR.5. A pattern without a concrete problem is dropped.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["pattern", "where", "problem"],
+        "properties": {
+          "pattern": { "$ref": "#/$defs/text" },
+          "where": { "$ref": "#/$defs/text" },
+          "problem": { "$ref": "#/$defs/text" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "text": { "type": "string", "minLength": 1 },
+    "slug": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+    "mode": { "enum": ["ai", "user"] },
+    "source": { "enum": ["user", "ai", "assumption"] },
+    "decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choice", "source", "reason"],
+      "properties": {
+        "choice": { "$ref": "#/$defs/text" },
+        "source": { "$ref": "#/$defs/source" },
+        "reason": { "$ref": "#/$defs/text" }
+      }
+    },
+    "multiDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choices", "source", "reason"],
+      "properties": {
+        "choices": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/text" } },
+        "source": { "$ref": "#/$defs/source" },
+        "reason": { "$ref": "#/$defs/text" }
+      }
+    },
+    "derivedDecision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["choice", "source", "reason", "derivedFrom"],
+      "properties": {
+        "choice": { "$ref": "#/$defs/text" },
+        "source": { "$ref": "#/$defs/source" },
+        "reason": { "$ref": "#/$defs/text" },
+        "derivedFrom": {
+          "description": "The stack layer this value follows from, e.g. 'stack.deployment'.",
+          "enum": ["stack.frontend", "stack.backend", "stack.database", "stack.deployment"]
+        }
+      }
+    }
+  }
+}

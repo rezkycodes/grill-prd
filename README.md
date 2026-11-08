@@ -97,37 +97,6 @@ npx skills@latest add rezkycodes/grill-prd --list
 
 Restart Claude Code, or open a new session, after installing so the skill is picked up.
 
-**Project-level** (only the current project, run from the project root):
-
-```bash
-npx skills add rezkycodes/grill-prd -a claude-code
-```
-
-**Global** (available in every project, for your user):
-
-```bash
-npx skills add rezkycodes/grill-prd -a claude-code -g
-```
-
-Useful options:
-
-| Option | Purpose |
-|---|---|
-| `-a, --agent claude-code` | Install only for Claude Code |
-| `-g, --global` | Install to your user directory instead of the project |
-| `-s, --skill grill-prd` | Select the skill by name (needed only if the repo has several) |
-| `-y, --yes` | Skip confirmation prompts |
-| `-l, --list` | List the skills in the repo without installing |
-
-Check what is installed, and remove it when you no longer need it:
-
-```bash
-npx skills list
-npx skills remove grill-prd -a claude-code
-```
-
-Restart Claude Code (or open a new session) after installing so the skill is picked up.
-
 ### Option 3: Antigravity IDE and `agy` CLI
 
 Antigravity reads skills from `.agents/skills/`. Install with the `antigravity` agent for the IDE, the `antigravity-cli` agent for `agy`, or both:
@@ -155,16 +124,16 @@ Project installs go to `.agents/skills/grill-prd/`. The global paths are `~/.gem
 
 ### Option 4: Manual copy
 
-The skill is a single file, [`skills/productivity/grill-prd/SKILL.md`](./skills/productivity/grill-prd/SKILL.md).
+The skill is the folder [`skills/productivity/grill-prd/`](./skills/productivity/grill-prd/): `SKILL.md` plus the `references/`, `schemas/`, `examples/` and `scripts/` it reads during a session. Copy the whole folder, not only `SKILL.md`.
 
 ```bash
 # Global
-mkdir -p ~/.claude/skills/grill-prd
-cp skills/productivity/grill-prd/SKILL.md ~/.claude/skills/grill-prd/SKILL.md
+mkdir -p ~/.claude/skills
+cp -r skills/productivity/grill-prd ~/.claude/skills/grill-prd
 
 # Project-level
-mkdir -p .claude/skills/grill-prd
-cp skills/productivity/grill-prd/SKILL.md .claude/skills/grill-prd/SKILL.md
+mkdir -p .claude/skills
+cp -r skills/productivity/grill-prd .claude/skills/grill-prd
 ```
 
 Keep the frontmatter at the top of `SKILL.md`. Claude Code uses `name` and `description` to decide when to invoke the skill:
@@ -259,7 +228,7 @@ Each branch is complete when its **exit criteria** are met.
 | **B3 — Scope & feature map** | Features derived from the B1 job, MoSCoW priorities, non-goals, data source for each feature | Every feature has a goal, role, sub-features, priority; every piece of data has a source |
 | **B4 — Flows & business rules** | Happy path, edge cases (empty data, payment failure, duplicates, cancellation, expiry), state machines, pricing rules | Every sub-feature has Given/When/Then acceptance criteria; every status has transitions and triggers |
 | **B5 — Data model** | Entities, relations, cardinality, owners, soft vs. hard delete, audit trail, files and media, personal data | Final ERD; every sub-feature maps to the entities it reads or writes |
-| **AR — Architecture** | `AI pick` or choose yourself; then, in order: domain design, software architecture, repository strategy (+ monorepo tooling), application architecture, design patterns | Five dimensions recorded with source and reason; every feature mapped to a module; monorepo tooling chosen if monorepo; no fit-check conflicts |
+| **AR — Architecture** | `AI pick` or choose yourself; then, in order: domain design, software architecture (topology and communication asked; execution model, backend ownership and frontend composition derived from TP), repository strategy (+ monorepo tooling), application architecture per deployable, design patterns | Every dimension recorded with source and reason; deployables listed with one application architecture each; every feature mapped to a module; monorepo tooling chosen if monorepo; no fit-check conflicts |
 | **B6 — Stack & architecture** | Unchosen layers, ORM, auth, storage, external integrations; applies the AR decisions to deployment and folder structure | Every component has a reason tied to a requirement; architecture diagram; folder structure consistent with AR |
 | **B7 — NFRs** | Performance (p95), scale, availability, security, observability, deployment, cost estimate | Every NFR has a number or a verifiable rule |
 | **B8 — Release phases** | Grouping features into phases; Phase 1 must be an end-to-end vertical slice | No dependency violations; each phase has a goal and a definition of done |
@@ -317,19 +286,25 @@ The skill runs these checks after TP and again in B6. Examples:
 
 ## Architecture catalog
 
-Asked in branch **AR**, after the data model (B5) and before the stack (B6), because each choice must be justified by scope, data, team size and scale. The five dimensions depend on each other, so they are asked one at a time in this order.
+Asked in branch **AR**, after the data model (B5) and before the stack (B6), because each choice must be justified by scope, data, team size and scale. Architecture is a **combination of decisions with dependencies**, not one dropdown, so the dimensions are asked one at a time in this order. The full catalog lives in [`references/architecture-catalog.md`](./skills/productivity/grill-prd/references/architecture-catalog.md).
 
-| # | Dimension | Options (abridged) |
-|---|---|---|
-| AR.1 | Domain design | Transaction script / CRUD · Anemic model + service layer · DDD-lite (bounded contexts as modules) · Full DDD (strategic + tactical) · Event storming to discover contexts |
-| AR.2 | Software architecture | Monolith · Modular monolith · Microservices · Serverless / functions · Event-driven · BaaS-centric · Micro-frontends |
-| AR.3 | Repository strategy | Single repo · Monorepo · Polyrepo · Hybrid |
-| AR.4 | Application architecture | Layered · MVC / framework-idiomatic · Feature-based / vertical slice · Clean · Hexagonal (ports & adapters) · Onion · CQRS · Feature-Sliced Design (frontend) · Atomic design (frontend UI) |
-| AR.5 | Design patterns (multi-select) | Repository · Unit of Work · Service layer · Use case · Command handler · Aggregate · Value object · Domain event · Adapter · Anti-corruption layer · Outbox · Idempotency key · Saga · Strategy · State machine · Pub-Sub · Dependency injection · CQRS · Event sourcing · DTO + schema validation · BFF · … |
+**Software architecture** means the system level (which deployables exist and how they talk). **Application architecture** means the code level inside one deployable. Books and teams use these words differently; the skill keeps your words in the conversation but records decisions under these definitions.
+
+| # | Dimension | How it is set | Options (abridged) |
+|---|---|---|---|
+| AR.1 | Domain design | Asked | Transaction script / CRUD · Anemic model + service layer · DDD-lite (bounded contexts as modules) · Full DDD · Event storming to discover contexts |
+| AR.2a | Software architecture — topology | Asked | Monolith · Modular monolith · Service-based · Microservices |
+| AR.2b | Software architecture — communication | Asked when there are several deployables or async flows (multi-select) | In-process calls · Sync HTTP / RPC · Async events / queue · Realtime push |
+| AR.2c | Software architecture — execution model | Derived from the TP deployment, confirmed with `ok` | Long-running server · Serverless functions · Edge · Mixed |
+| AR.2d | Software architecture — backend ownership | Derived from the TP backend | Custom backend · BaaS · Hybrid |
+| AR.2e | Software architecture — frontend composition | Derived from the TP frontend(s) | Single app · Several apps · Micro-frontends |
+| AR.3 | Repository strategy | Asked | Single repo · Monorepo · Polyrepo · Hybrid |
+| AR.4 | Application architecture, one per deployable | Asked | Layered · MVC / framework-idiomatic · Feature-based / vertical slice · Clean · Hexagonal · Onion · CQRS · Feature-Sliced Design (frontend) · Atomic design (frontend UI) |
+| AR.5 | Design patterns (multi-select) | Asked | Repository · Unit of Work · Service layer · Use case · Command handler · Aggregate · Value object · Domain event · Adapter · Anti-corruption layer · Outbox · Idempotency key · Saga · Strategy · State machine · Pub-Sub · Dependency injection · CQRS · Event sourcing · DTO + schema validation · BFF · … |
 
 ### Monorepo tooling
 
-When you choose **Monorepo** in AR.3, the skill asks which tooling. A monorepo usually needs a **workspace manager** and optionally a **task runner / build system**.
+When you choose **Monorepo** in AR.3, the skill asks which tooling and records three things separately: the **package / workspace manager** (owns the lockfile), an optional **orchestrator** (task graph, caching), and any **language-native workspaces**. The runtime is a separate decision: Bun runtime + pnpm workspaces is valid.
 
 | Tooling | Type |
 |---|---|
@@ -342,21 +317,31 @@ When you choose **Monorepo** in AR.3, the skill asks which tooling. A monorepo u
 | Bazel · Buck2 · Pants | Hermetic, polyglot build systems |
 | Cargo workspaces · Go workspaces (`go.work`) · uv workspaces · Gradle / Maven multi-module · .NET solution · Composer path repositories | Language-native workspaces |
 
-Typical pairings: `Bun workspaces + Nx`, `pnpm workspaces + Turborepo`, `pnpm workspaces + Nx`, `npm workspaces + Turborepo`, and Nx or moon for polyglot repos.
+The skill derives the languages from your TP answers and filters the tooling with a language mapping:
+
+| Languages in the repo | Workspace / package manager | Orchestrator (optional) | Shared contracts |
+|---|---|---|---|
+| TypeScript / JavaScript only | The package manager already in use (Bun, pnpm, npm, Yarn) | Turborepo or Nx | Shared TS package (Zod) or tRPC |
+| Go / Rust / Python / PHP only | `go.work` / Cargo / uv / Composer | Usually none | Shared packages; OpenAPI for external clients |
+| Java / Kotlin or C# / .NET only | Gradle or Maven / .NET solution | The build tool itself | Shared modules; OpenAPI or protobuf |
+| Polyglot (e.g. Next.js + Go Fiber) | JS package manager + each language's native workspace | Nx (plugins), moon, or Bazel | Language-neutral: OpenAPI, protobuf, or JSON Schema with generated clients |
 
 ### Architecture fit checks
 
 | Combination | What is checked |
 |---|---|
 | Microservices + 1–3 developers or no independent scaling need | Flagged as over-engineering; a modular monolith is recommended |
-| Microservices sharing one database | Distributed monolith; one database per service, or stay modular |
+| Microservices or service-based sharing one database | Distributed monolith; one database per service, or stay modular |
 | Full DDD or event sourcing for a CRUD-heavy product | Flagged as over-engineering |
+| Async events / outbox without a queue or broker in the stack | Add one in B6, or drop the async part |
+| Realtime push + serverless execution model | Managed realtime service or a long-running service for that part |
+| A derived value contradicts a TP answer | Both are shown and you decide; nothing is overridden silently |
+| Micro-frontends with one frontend team | Flagged as over-engineering |
 | Polyrepo + shared contracts | Versioned packages needed; a monorepo is suggested |
-| Monorepo with mixed languages + a JS-only task runner | Use Nx, moon, Bazel, or language-native workspaces |
+| Monorepo with mixed languages + a JS-only orchestrator | Use Nx, moon or Bazel, and a language-neutral contract |
 | Monorepo with one deployable and no shared packages | Single repo until a second app appears |
-| Runtime's package manager ≠ workspace manager | Must match (for example Bun runtime + Bun workspaces) |
-| Event-driven or outbox without a queue/broker in the stack | Add one in B6, or drop the pattern |
-| A feature not mapped to any module | Fix the boundary or the feature before the PRD is written |
+| More than one package manager or lockfile, or CI/Docker installing with a different one | One package manager per repo; lockfile, install command, CI cache and Docker build all use it. The runtime may differ |
+| A feature not mapped to any module, or a deployable without exactly one application architecture | Fixed before the PRD is written |
 
 ## Precision rules
 
@@ -373,8 +358,8 @@ Before the PRD is written, the skill checks:
 - Every sub-feature has at least one Given/When/Then acceptance criterion.
 - Every sub-feature maps to entities (B5), endpoints (if any), and roles (B2).
 - No unmeasured adjectives: "fast" → `p95 < 500 ms`; "a lot" → `≤ 5,000 designs`.
-- Every stack choice has a "Reason" that refers to a requirement, not taste.
-- Every feature belongs to exactly one module / bounded context.
+- Every stack and architecture decision has a "Reason" that refers to a requirement, not taste.
+- Every feature belongs to exactly one module / bounded context, and every deployable has exactly one application architecture.
 - Every design pattern names where it applies and the problem it solves.
 - A feature with no role, no data source, or no link to the B1 job is proposed for removal or moved to Non-goals.
 
@@ -383,7 +368,7 @@ Before the PRD is written, the skill checks:
 Two artifacts are produced:
 
 1. **`PRD.md`**: the full document, with 13 sections (summary, problem and JTBD, goals and metrics, actors and role matrix, feature map, feature specifications, data model, API surface, architecture (domain, software, repository, application, patterns) and stack, NFRs, phase plan, decision log, assumptions and open questions).
-2. **`feature-map.json`**: a structured schema for rendering a feature map, turning features into tickets, or scaffolding.
+2. **`feature-map.json`**: structured data for rendering a feature map, turning features into tickets, or scaffolding. It follows a formal JSON Schema ([`schemas/feature-map.schema.json`](./skills/productivity/grill-prd/schemas/feature-map.schema.json) and [`schemas/architecture.schema.json`](./skills/productivity/grill-prd/schemas/architecture.schema.json)), and the skill checks its cross-references with a dependency-free script before handing it over.
 
 Inside a codebase they are saved to:
 
@@ -396,56 +381,229 @@ Outside a codebase, both are delivered as documents in the chat.
 
 ### Example `feature-map.json` (abridged)
 
+The full, valid example is [`examples/feature-map.example.json`](./skills/productivity/grill-prd/examples/feature-map.example.json). Abridged to one phase and one feature:
+
 ```json
 {
-  "project": { "name": "Billboard Design Portal", "slug": "billboard-design-portal", "status": "planning", "version": "0.1" },
+  "project": {
+    "name": "Billboard Design Portal",
+    "slug": "billboard-design-portal",
+    "status": "planning",
+    "version": "0.1"
+  },
   "phases": [
-    { "id": 1, "name": "MVP Catalog & Pricing", "goal": "Village governments can browse designs with prices and contact the admin" }
+    {
+      "id": 1,
+      "name": "MVP Catalog & Pricing",
+      "goal": "Village governments can browse designs with prices and contact the admin"
+    }
   ],
   "stack": {
     "mode": "user",
-    "frontend": { "choice": "Next.js", "source": "user" },
-    "backend": { "choice": "Hono (Bun)", "source": "ai" },
-    "database": { "choice": "PostgreSQL", "source": "ai" },
-    "deployment": { "choice": "VPS (Coolify)", "source": "ai" }
+    "frontend": {
+      "choice": "Next.js",
+      "source": "user",
+      "reason": "Public catalog needs SEO; admin lives in the same app as protected routes"
+    },
+    "backend": {
+      "choice": "Hono (Bun)",
+      "source": "ai",
+      "reason": "Small typed API sharing Zod contracts with the web app"
+    },
+    "database": {
+      "choice": "PostgreSQL",
+      "source": "ai",
+      "reason": "Designs, prices and orders are relational; price history needs transactions"
+    },
+    "deployment": {
+      "choice": "VPS (Coolify)",
+      "source": "ai",
+      "reason": "Fixed monthly cost, Singapore region close to users, long-running API"
+    },
+    "extras": {
+      "packageManager": {
+        "choice": "Bun",
+        "source": "user",
+        "reason": "Team standard; same tool as the runtime"
+      },
+      "orm": {
+        "choice": "Drizzle",
+        "source": "ai",
+        "reason": "TypeScript ORM that matches the backend language"
+      },
+      "auth": {
+        "choice": "better-auth",
+        "source": "ai",
+        "reason": "Email + password for a single admin, no external IdP"
+      },
+      "storage": {
+        "choice": "Cloudflare R2",
+        "source": "ai",
+        "reason": "Design images up to 10 MB, cheap egress"
+      }
+    }
   },
   "architecture": {
     "mode": "user",
-    "domainDesign": { "choice": "DDD-lite", "source": "ai" },
-    "softwareArchitecture": { "choice": "Modular monolith", "source": "ai" },
-    "repositoryStrategy": { "choice": "Monorepo", "tooling": "Bun workspaces + Nx", "source": "user" },
+    "domainDesign": {
+      "choice": "DDD-lite",
+      "source": "ai",
+      "reason": "Four sub-domains; real rules only in pricing and ordering"
+    },
+    "softwareArchitecture": {
+      "topology": {
+        "choice": "Modular monolith",
+        "source": "ai",
+        "reason": "One developer, no independent scaling need"
+      },
+      "communication": {
+        "choices": [
+          "In-process calls",
+          "Sync HTTP / RPC"
+        ],
+        "source": "ai",
+        "reason": "Web calls the API over HTTP; modules inside the API call each other in-process"
+      },
+      "executionModel": {
+        "choice": "Long-running server",
+        "source": "ai",
+        "reason": "Follows from VPS (Coolify)",
+        "derivedFrom": "stack.deployment"
+      },
+      "backendOwnership": {
+        "choice": "Custom backend",
+        "source": "ai",
+        "reason": "Follows from Hono (Bun)",
+        "derivedFrom": "stack.backend"
+      },
+      "frontendComposition": {
+        "choice": "Single app",
+        "source": "ai",
+        "reason": "Admin is a protected area of the same Next.js app",
+        "derivedFrom": "stack.frontend"
+      }
+    },
+    "deployables": [
+      {
+        "id": "web",
+        "kind": "frontend",
+        "stack": "Next.js"
+      },
+      {
+        "id": "api",
+        "kind": "backend",
+        "stack": "Hono (Bun)"
+      }
+    ],
+    "repositoryStrategy": {
+      "choice": "Monorepo",
+      "source": "user",
+      "reason": "Web and API share Zod contracts",
+      "tooling": {
+        "workspaceManager": "Bun workspaces",
+        "orchestrator": "Nx",
+        "languageWorkspaces": [],
+        "sharedContracts": "packages/contracts with Zod schemas"
+      }
+    },
     "applicationArchitecture": [
-      { "deployable": "api", "choice": "Vertical slice (handler → service → repository)", "source": "ai" }
+      {
+        "deployable": "api",
+        "choice": "Vertical slice (handler → service → repository)",
+        "source": "ai",
+        "reason": "Modules change independently; thin layers keep CRUD simple"
+      },
+      {
+        "deployable": "web",
+        "choice": "Feature-based folders",
+        "source": "ai",
+        "reason": "Pages map one-to-one to features"
+      }
     ],
     "modules": [
-      { "id": "catalog", "name": "Catalog", "owns": ["Design", "Category"] },
-      { "id": "pricing", "name": "Pricing", "owns": ["DesignPrice", "PriceHistory"] }
+      {
+        "id": "identity",
+        "name": "Identity",
+        "responsibility": "Admin accounts and sessions",
+        "owns": [
+          "AdminUser"
+        ]
+      },
+      {
+        "id": "catalog",
+        "name": "Catalog",
+        "responsibility": "Designs and categories",
+        "owns": [
+          "Design",
+          "Category"
+        ]
+      },
+      {
+        "id": "pricing",
+        "name": "Pricing",
+        "responsibility": "Current prices and their history",
+        "owns": [
+          "DesignPrice",
+          "PriceHistory"
+        ]
+      },
+      {
+        "id": "ordering",
+        "name": "Ordering",
+        "responsibility": "Contact and orders from village governments",
+        "owns": [
+          "Order"
+        ]
+      }
     ],
     "designPatterns": [
-      { "pattern": "State machine", "where": "Order.status", "problem": "Only valid status transitions" }
+      {
+        "pattern": "Repository",
+        "where": "Each module's data access in the API",
+        "problem": "Keep Drizzle queries out of services and testable"
+      },
+      {
+        "pattern": "State machine",
+        "where": "Order.status",
+        "problem": "Only valid status transitions, enforced in one place"
+      }
     ]
   },
-  "roles": ["guest", "admin"],
+  "roles": [
+    "guest",
+    "admin"
+  ],
   "features": [
     {
       "id": "F-GAL",
       "name": "Design Gallery",
+      "icon": "layout-grid",
       "module": "catalog",
       "phase": 1,
       "status": "planned",
       "priority": "must",
-      "roles": ["guest"],
-      "dependsOn": ["F-MDS", "F-PRC"],
+      "roles": [
+        "guest"
+      ],
+      "dependsOn": [
+        "F-MDS",
+        "F-PRC"
+      ],
       "subFeatures": [
         {
           "id": "F-GAL-01",
           "name": "Design Catalog",
           "priority": "must",
           "acceptanceCriteria": [
-            "Given active designs exist, When a guest opens /designs, Then a grid of designs is shown with thumbnail, name, and starting price"
+            "Given active designs exist, When a guest opens /designs, Then a grid of designs is shown with thumbnail, name, and starting price, newest first"
           ],
-          "entities": ["Design", "DesignPrice"],
-          "endpoints": ["GET /api/designs"]
+          "entities": [
+            "Design",
+            "DesignPrice"
+          ],
+          "endpoints": [
+            "GET /api/designs"
+          ]
         }
       ]
     }
@@ -453,15 +611,23 @@ Outside a codebase, both are delivered as documents in the chat.
 }
 ```
 
-Schema rules:
-- `status`: `planned | in_progress | done | dropped`
-- `priority`: `must | should | could | wont`
-- `icon`: a lucide icon name (e.g., `layout-grid`, `search`, `shopping-cart`)
-- Stable IDs: `F-<CODE>` for features, `F-<CODE>-NN` for sub-features. The same ID is used in `PRD.md` and the JSON.
-- `dependsOn` contains only existing feature IDs.
-- `stack.mode`: `ai | user`. Each layer's `source`: `user | ai | assumption`.
-- `architecture.mode`: `ai | user`. Each dimension's `source`: `user | ai | assumption`. `repositoryStrategy.tooling` is set only for a monorepo.
-- Every feature's `module` matches an `architecture.modules[].id`.
+Schema rules (the [schema files](./skills/productivity/grill-prd/schemas/) are authoritative):
+- `status`: `planned | in_progress | done | dropped`; `priority`: `must | should | could | wont`; `icon`: a lucide icon name.
+- Stable IDs: `F-<CODE>` for features, `F-<CODE>-NN` for sub-features, the same in `PRD.md` and the JSON. Acceptance criteria start with `Given … When … Then`.
+- Every stack layer and architecture decision is `{ "choice", "source", "reason" }` with `source`: `user | ai | assumption`. Derived software-architecture values also carry `derivedFrom` (the stack layer they follow from). `choice` is free text, except `repositoryStrategy.choice`: `Single repo | Monorepo | Polyrepo | Hybrid`.
+- `stack.mode` and `architecture.mode`: `ai | user` (`user` as soon as you picked at least one item).
+- `repositoryStrategy.tooling` (workspace manager, optional orchestrator, language workspaces, shared contracts) is required for `Monorepo` and `Hybrid`, and absent otherwise.
+- Every feature's `module` matches an `architecture.modules[].id`; every deployable has exactly one `applicationArchitecture` entry; `dependsOn` points to existing features in the same or an earlier phase.
+
+### Checking a feature map
+
+The skill runs its own dependency-free checker before handing `feature-map.json` over. You can run it yourself with Node.js 18+ or Bun:
+
+```bash
+node skills/productivity/grill-prd/scripts/check-feature-map.mjs docs/prd/<slug>/feature-map.json
+```
+
+It reports cross-reference problems a JSON Schema cannot catch: unknown modules, phases, roles or dependencies, sub-feature IDs that don't match their feature, dependency cycles, the phase dependency check, deployables without an application architecture, monorepo tooling on a non-monorepo, and `mode` values that contradict the recorded sources.
 
 ## Skills
 
@@ -486,19 +652,25 @@ grill-prd/
 ├── .claude-plugin/           # Claude Code plugin and marketplace manifests
 │   ├── marketplace.json
 │   └── plugin.json
-├── .github/                  # Issue templates and workflows (release, triage, needs-info)
+├── .github/                  # Issue templates and workflows (release, validate, triage, needs-info)
 ├── .out-of-scope/            # Requests this repo has decided not to take
 ├── docs/
 │   └── productivity/
 │       └── grill-prd.md      # Human-facing docs page for the skill
-├── scripts/                  # link-skills.sh, list-skills.sh, sync-plugin-version.mjs
+├── scripts/                  # link-skills.sh, list-skills.sh, sync-plugin-version.mjs, validate-feature-maps.mjs
 ├── skills/
 │   └── productivity/
 │       ├── README.md         # Bucket index
-│       └── grill-prd/
-│           ├── SKILL.md      # Skill definition (frontmatter + full instructions)
+│       └── grill-prd/        # The skill: this whole folder is what gets installed
+│           ├── SKILL.md      # Skill definition (frontmatter + interview instructions)
+│           ├── references/   # Stack catalog, architecture catalog, PRD template (read on demand)
+│           ├── schemas/      # JSON Schemas for feature-map.json and its architecture block
+│           ├── examples/     # A complete, valid feature-map.json
+│           ├── scripts/      # check-feature-map.mjs (dependency-free cross-reference checker)
 │           └── agents/
 │               └── openai.yaml   # Codex UI metadata
+├── tests/
+│   └── fixtures/             # valid/ and invalid/ feature maps; invalid file names are the expected error codes
 ├── AGENTS.md                 # Symlink to CLAUDE.md
 ├── CHANGELOG.md
 ├── CLAUDE.md                 # Rules for working in this repo
@@ -525,10 +697,16 @@ Choose `Let AI pick`. The skill selects defaults that fit your requirements in B
 Name your choices per layer in the TP stage. Your picks are treated as constraints. If there's a conflict, the skill asks you before changing anything.
 
 **Why is architecture asked so late?**
-Because a choice such as microservices or full DDD is only right if the scope, data and team justify it. By the time AR starts, the skill knows the features, rules and entities, so it can say *why* it recommends, for example, a modular monolith in a Bun workspaces + Nx monorepo.
+Because a choice such as microservices or full DDD is only right if the scope, data and team justify it. By the time AR starts, the skill knows the features, rules and entities, so it can say *why* it recommends, for example, a modular monolith with DDD-lite instead of microservices.
+
+**Will it ask me about serverless or BaaS again after I picked my stack?**
+No. The execution model, backend ownership and frontend composition follow from your TP answers; the skill states them and asks for `ok`. It only asks again if a derived value contradicts something you said.
 
 **I picked "Monorepo". What happens next?**
-The skill asks which tooling: a workspace manager (Bun, pnpm, npm, Yarn) and optionally a task runner or build system (Nx, Turborepo, moon, Bazel, …), recommended to match your runtime and languages.
+The skill asks which tooling: the package / workspace manager (Bun, pnpm, npm, Yarn, or a language-native one such as `go.work`), an optional orchestrator (Nx, Turborepo, moon, Bazel, …), and how apps share contracts. It derives your languages from TP, so a Next.js + Go repo gets a polyglot recommendation, not a JS-only one. Your runtime and package manager can differ.
+
+**How do I know the feature map is consistent?**
+Run the checker described in [Checking a feature map](#checking-a-feature-map). The skill runs it too when it has a shell.
 
 **Does the skill write code?**
 No. It produces the PRD and feature map only. Implementation comes afterward.

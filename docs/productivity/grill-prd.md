@@ -18,8 +18,14 @@ Yes. Pick per layer (frontend, backend, database, deployment) early in the inter
 **Why does it question my architecture choices?**
 Architecture is asked after scope and data on purpose: a recommendation must point at a requirement. Choices that the scope does not justify, such as microservices for one developer or full DDD for a CRUD catalog, are flagged as over-engineering.
 
+**Why doesn't it ask me about serverless or BaaS in the architecture step?**
+Because you already answered it when you picked the host and backend. Architecture is a combination of decisions, not one dropdown: the skill asks for the topology and, when it matters, how the parts communicate, and derives the rest from your stack for you to confirm.
+
 **What does "monorepo" lead to?**
-A follow-up on tooling: a workspace manager (Bun, pnpm, npm, Yarn) and optionally a task runner or build system (Nx, Turborepo, moon, Bazel), matched to your runtime and languages.
+A follow-up on tooling: the package / workspace manager, an optional orchestrator (Nx, Turborepo, moon, Bazel), and how apps share contracts. The recommendation follows the languages in your stack, so a repo that mixes TypeScript and Go gets a polyglot setup. Your runtime and package manager are separate choices.
+
+**Can I trust the `feature-map.json`?**
+It follows a published [JSON Schema](https://github.com/rezkycodes/grill-prd/tree/main/skills/productivity/grill-prd/schemas), and the skill checks its cross-references (modules, phases, dependencies, deployables) with a [dependency-free checker](https://github.com/rezkycodes/grill-prd/blob/main/skills/productivity/grill-prd/scripts/check-feature-map.mjs) before handing it over.
 
 ## Where it fits
 
@@ -32,3 +38,4 @@ A **run-once planning step**. It sits before implementation: the `feature-map.js
 - Acceptance criteria are Given/When/Then, and vague words such as "fast" have been replaced with numbers.
 - Conflicts between the stack you chose and the requirements show up as questions, before the PRD is written.
 - Every feature belongs to one module, every design pattern names the problem it solves, and the folder structure matches the repository strategy you chose.
+- The checker reports no errors on the `feature-map.json` you receive.
