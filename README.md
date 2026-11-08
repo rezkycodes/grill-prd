@@ -1,60 +1,91 @@
 # Grill PRD
 
-Skill untuk Claude Code yang mewawancarai kamu secara mendalam (satu pertanyaan per giliran, selalu dengan rekomendasi jawaban) sampai pemahaman bersama tercapai, lalu menulis **PRD yang presisi**: stack, arsitektur, data model, dan feature map bertingkat (feature → sub-feature) yang sudah diurutkan per fase.
+A Claude Code skill that interviews you relentlessly, one question at a time with a recommended answer for each, until you reach a shared understanding of the product. Then it writes a **precise PRD**: stack, architecture, data model, and a phased feature map (feature → sub-feature) with testable acceptance criteria.
 
-Cocok dipakai saat kamu ingin menulis, memperbaiki, atau memvalidasi PRD, atau merencanakan aplikasi/fitur baru.
+Use it when you want to write, refine, or validate a PRD, or plan a new app or feature.
 
-> Diadaptasi dari skill `grill-me` ([mattpocock/skills](https://github.com/mattpocock/skills), lisensi MIT).
+> Adapted from the `grill-me` skill in [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).
 
 ---
 
-## Daftar isi
+## Table of contents
 
-- [Fitur utama](#fitur-utama)
-- [Instalasi](#instalasi)
-- [Cara pakai](#cara-pakai)
-- [Alur kerja](#alur-kerja)
-- [Cabang desain (design tree)](#cabang-desain-design-tree)
-- [Default stack & katalog layer](#default-stack--katalog-layer)
-- [Aturan presisi](#aturan-presisi)
+- [Features](#features)
+- [Installation](#installation)
+- [Usage](#usage)
+- [Workflow](#workflow)
+- [Design tree](#design-tree)
+- [Default stack and layer catalog](#default-stack-and-layer-catalog)
+- [Precision rules](#precision-rules)
 - [Output](#output)
-- [Struktur repo](#struktur-repo)
+- [Repository structure](#repository-structure)
 - [FAQ](#faq)
-- [Lisensi & kredit](#lisensi--kredit)  (MIT, lihat [LICENSE](./LICENSE))
+- [License and credits](#license-and-credits)
 
 ---
 
-## Fitur utama
+## Features
 
-- **Grilling bertahap** — pertanyaan diajukan satu per satu, mengikuti urutan dependensi (bukan urutan template).
-- **Rekomendasi di setiap pertanyaan** — kamu cukup membalas `ok` untuk menerima.
-- **Cek kompatibilitas stack otomatis** — mendeteksi kombinasi teknologi yang bertabrakan (mis. Laravel di Vercel) dan mengusulkan perbaikan.
-- **Pemeriksaan dependensi fase** — memastikan fitur tidak ada di fase yang lebih awal daripada fitur yang dibutuhkannya.
-- **Decision Log** dalam format ADR ringkas, sehingga setiap keputusan terdokumentasi beserta alasannya.
-- **Dua output**: `PRD.md` (dokumen untuk manusia) dan `feature-map.json` (skema terstruktur untuk dirender, dijadikan tiket, atau dijadikan dasar scaffold).
-- **Mode `AI pick`** — kalau belum punya stack, skill memilihkan default yang cocok dengan kebutuhan, lengkap dengan alasannya.
+- **Progressive grilling**: questions come one at a time, ordered by dependency rather than by template.
+- **A recommendation on every question**: reply `ok` to accept it.
+- **Automatic stack compatibility check**: flags conflicting choices (for example, Laravel on Vercel) and proposes fixes.
+- **Phase dependency check**: a feature never sits in an earlier phase than a feature it depends on.
+- **Decision Log** in a short ADR format, so every decision is recorded with its reason.
+- **Two outputs**: `PRD.md` for humans and `feature-map.json` for rendering, ticket generation, or scaffolding.
+- **`Let AI pick` mode**: if you have no stack yet, the skill chooses defaults that fit your requirements and explains why.
 
-## Instalasi
+## Installation
 
-Skill ini hanya berisi satu file: `SKILL.md`.
+### Option 1: Install with `npx skills` (recommended)
 
-**Opsi 1 — level user (tersedia di semua project):**
+The [`skills`](https://www.npmjs.com/package/skills) CLI installs skills directly from GitHub into Claude Code.
+
+**Project-level** (only the current project, run from the project root):
 
 ```bash
-mkdir -p ~/.claude/skills/grill-prd
-cp SKILL.md ~/.claude/skills/grill-prd/SKILL.md
+npx skills add rezkycodes/grill-prd -a claude-code
 ```
 
-**Opsi 2 — level project (hanya di repo tertentu):**
+**Global** (available in every project, for your user):
 
 ```bash
+npx skills add rezkycodes/grill-prd -a claude-code -g
+```
+
+Useful options:
+
+| Option | Purpose |
+|---|---|
+| `-a, --agent claude-code` | Install only for Claude Code |
+| `-g, --global` | Install to your user directory instead of the project |
+| `-s, --skill grill-prd` | Select the skill by name (needed only if the repo has several) |
+| `-y, --yes` | Skip confirmation prompts |
+| `-l, --list` | List the skills in the repo without installing |
+
+Check what is installed, and remove it when you no longer need it:
+
+```bash
+npx skills list
+npx skills remove grill-prd -a claude-code
+```
+
+Restart Claude Code (or open a new session) after installing so the skill is picked up.
+
+### Option 2: Manual copy
+
+The skill is a single file, `SKILL.md`.
+
+```bash
+# Global
+mkdir -p ~/.claude/skills/grill-prd
+cp SKILL.md ~/.claude/skills/grill-prd/SKILL.md
+
+# Project-level
 mkdir -p .claude/skills/grill-prd
 cp SKILL.md .claude/skills/grill-prd/SKILL.md
 ```
 
-Setelah itu, mulai ulang Claude Code (atau buka sesi baru) agar skill terdeteksi.
-
-Pastikan frontmatter di bagian atas `SKILL.md` tetap ada, karena Claude Code memakai `name` dan `description` untuk memutuskan kapan skill dipanggil:
+Keep the frontmatter at the top of `SKILL.md`. Claude Code uses `name` and `description` to decide when to invoke the skill:
 
 ```yaml
 ---
@@ -63,179 +94,179 @@ description: Grill the user relentlessly, ... Use when the user wants to write, 
 ---
 ```
 
-## Cara pakai
+## Usage
 
-Panggil skill secara eksplisit, atau cukup sebutkan kebutuhanmu. Contoh pemicu:
+Invoke the skill explicitly, or just describe what you need. Example triggers:
 
 ```
 /grill-prd
 ```
 
 ```
-Saya mau bikin aplikasi katalog desain billboard untuk pemerintah desa. Tolong grill saya dan tulis PRD-nya.
+I want to build a billboard design catalog for village governments. Grill me and write the PRD.
 ```
 
 ```
-Validasi PRD saya di docs/prd/toko-online/PRD.md
+Validate my PRD at docs/prd/online-shop/PRD.md
 ```
 
 ```
-Plan fitur baru: sistem booking lapangan futsal.
+Plan a new feature: a futsal field booking system.
 ```
 
-Selama sesi, kamu akan melihat format pertanyaan seperti ini:
+During the session, questions look like this:
 
 ```
-❓ [B3.2] Siapa yang mengisi katalog desain pertama kali?
-Why it matters: Design Gallery (Fase 1) kosong tanpa sumber data.
-➡️ Recommendation: Admin upload lewat panel Manage Designs, jadi Manage Designs + Admin Login pindah ke Fase 1.
-Alternatives: (a) seed manual lewat script di Fase 1; (b) impor dari folder Google Drive.
+❓ [B3.2] Who populates the design catalog for the first time?
+Why it matters: Design Gallery (Phase 1) is empty without a data source.
+➡️ Recommendation: Admins upload through the Manage Designs panel, so Manage Designs + Admin Login move to Phase 1.
+Alternatives: (a) manual seed via script in Phase 1, panel later; (b) import from a Google Drive folder.
 ```
 
-Kode `[B3.2]` berarti cabang B3, pertanyaan ke-2. Setiap berpindah cabang, skill menampilkan progres, misalnya `Branches done: B1 ✅ TP ✅ B2 ✅ | Now: B3`.
+The code `[B3.2]` means branch B3, question 2. Whenever the skill switches branches it shows progress, for example `Branches done: B1 ✅ TP ✅ B2 ✅ | Now: B3`.
 
-Jika tersedia tool pilihan ganda interaktif (mis. `AskUserQuestion`), pertanyaan dengan opsi diskrit akan ditampilkan sebagai pilihan. Kamu tetap bisa mengetik jawaban sendiri.
+If your Claude Code has an interactive multiple-choice tool, questions with discrete options appear as choices. You can always type your own answer.
 
-### Perintah yang berguna selama sesi
+### Commands during a session
 
-| Yang kamu ketik | Efek |
+| You type | Effect |
 |---|---|
-| `ok` | Menerima rekomendasi |
-| `batch mode` | Skill boleh mengajukan hingga 4 pertanyaan independen sekaligus |
-| `skip` | Pertanyaan diisi rekomendasi, ditandai `[ASSUMPTION]`, dan masuk Open Questions |
-| `enough, write the PRD` | Berhenti menggali dan langsung menulis PRD |
-| `Let AI pick` | Menyerahkan satu layer stack ke skill |
+| `ok` | Accept the recommendation |
+| `batch mode` | Allow up to 4 independent questions at once |
+| `skip` | Fill the answer with the recommendation, mark it `[ASSUMPTION]`, and add it to Open Questions |
+| `enough, write the PRD` | Stop grilling and write the PRD now |
+| `Let AI pick` | Hand one stack layer to the skill |
 
-## Alur kerja
+## Workflow
 
 ```
-TP (preferensi teknologi)
+TP (tech preferences)
    │
    ▼
-B1 Problem & users ─► B2 Aktor & akses ─► B3 Scope & feature map
-                                              │
-   ┌──────────────────────────────────────────┘
+B1 Problem & users ─► B2 Actors & access ─► B3 Scope & feature map
+                                                   │
+   ┌───────────────────────────────────────────────┘
    ▼
-B4 Flow & aturan bisnis ─► B5 Data model ─► B6 Stack & arsitektur
-                                              │
-                                              ▼
-                       B7 NFR ─► B8 Fase rilis & validasi dependensi
-                                              │
-                                              ▼
-                      Shared-understanding summary ─► konfirmasi user
-                                              │
-                                              ▼
-                              Definition of Ready terpenuhi
-                                              │
-                                              ▼
-                         Tulis PRD.md + feature-map.json
+B4 Flows & business rules ─► B5 Data model ─► B6 Stack & architecture
+                                                   │
+                                                   ▼
+                       B7 NFRs ─► B8 Release phases & dependency validation
+                                                   │
+                                                   ▼
+                     Shared-understanding summary ─► your confirmation
+                                                   │
+                                                   ▼
+                                  Definition of Ready met
+                                                   │
+                                                   ▼
+                              Write PRD.md + feature-map.json
 ```
 
-Skill tidak menulis PRD sebelum kamu mengonfirmasi ringkasan pemahaman bersama.
+The skill does not write the PRD until you confirm the shared-understanding summary.
 
-## Cabang desain (design tree)
+## Design tree
 
-Setiap cabang selesai ketika **exit criteria**-nya terpenuhi.
+Each branch is complete when its **exit criteria** are met.
 
-| Cabang | Yang digali | Exit criteria |
+| Branch | What is explored | Exit criteria |
 |---|---|---|
-| **B1 — Problem & users** | Pengguna utama, apa yang dilakukan sekarang, satu core value, pemicu retensi, buyer vs user | Pernyataan masalah, 1 core value, 1 "first-session job", 1 pemicu retensi, metrik sukses |
-| **TP — Tech preferences** | Mode `AI pick` atau pilih sendiri; lalu frontend, backend, database, deployment | Mode ditetapkan; tiap layer punya sumber (`user`, `ai`, atau `assumption`); tidak ada konflik kompatibilitas |
-| **B2 — Aktor & akses** | Role (guest, user, admin, dst.), matriks role × kapabilitas, metode auth | Matriks role lengkap, auth dipilih, tidak ada fitur tanpa role |
-| **B3 — Scope & feature map** | Fitur turunan dari job B1, MoSCoW, non-goals, sumber data tiap fitur | Setiap fitur punya tujuan, role, sub-fitur, prioritas; setiap data punya sumber |
-| **B4 — Flow & aturan bisnis** | Happy path, edge case (kosong, gagal bayar, duplikat, pembatalan, kedaluwarsa), state machine, rumus harga | Setiap sub-fitur punya acceptance criteria Given/When/Then; setiap status punya transisi dan pemicunya |
-| **B5 — Data model** | Entitas, relasi, kardinalitas, owner, soft/hard delete, audit trail, file & media, data pribadi | ERD final; setiap sub-fitur terpetakan ke entitas yang dibaca/ditulis |
-| **B6 — Stack & arsitektur** | Layer yang belum dipilih, ORM, auth, storage, topologi, integrasi eksternal | Setiap komponen punya alasan yang terkait requirement; diagram arsitektur; struktur folder |
-| **B7 — NFR** | Performa (p95), skala, ketersediaan, keamanan, observability, deployment, estimasi biaya | Setiap NFR punya angka atau aturan yang bisa diverifikasi |
-| **B8 — Fase rilis** | Pengelompokan fitur per fase; Fase 1 harus berupa vertical slice end-to-end | Tidak ada pelanggaran dependensi; tiap fase punya tujuan dan definition of done |
+| **B1 — Problem & users** | Primary user, what they do today, one core value, retention trigger, buyer vs. user | Problem statement, 1 core value, 1 first-session job, 1 retention trigger, success metrics |
+| **TP — Tech preferences** | `AI pick` or choose yourself; then frontend, backend, database, deployment | Mode set; each layer has a source (`user`, `ai`, or `assumption`); no compatibility conflicts |
+| **B2 — Actors & access** | Roles (guest, user, admin, …), role × capability matrix, auth method | Complete role matrix, auth chosen, no feature without a role |
+| **B3 — Scope & feature map** | Features derived from the B1 job, MoSCoW priorities, non-goals, data source for each feature | Every feature has a goal, role, sub-features, priority; every piece of data has a source |
+| **B4 — Flows & business rules** | Happy path, edge cases (empty data, payment failure, duplicates, cancellation, expiry), state machines, pricing rules | Every sub-feature has Given/When/Then acceptance criteria; every status has transitions and triggers |
+| **B5 — Data model** | Entities, relations, cardinality, owners, soft vs. hard delete, audit trail, files and media, personal data | Final ERD; every sub-feature maps to the entities it reads or writes |
+| **B6 — Stack & architecture** | Unchosen layers, ORM, auth, storage, topology, external integrations | Every component has a reason tied to a requirement; architecture diagram; folder structure |
+| **B7 — NFRs** | Performance (p95), scale, availability, security, observability, deployment, cost estimate | Every NFR has a number or a verifiable rule |
+| **B8 — Release phases** | Grouping features into phases; Phase 1 must be an end-to-end vertical slice | No dependency violations; each phase has a goal and a definition of done |
 
-## Default stack & katalog layer
+## Default stack and layer catalog
 
-### Default stack (rekomendasi awal)
+### Default stack (starting recommendation)
 
-| Layer | Default | Pilih alternatif jika |
+| Layer | Default | Choose an alternative when |
 |---|---|---|
-| Runtime & monorepo | Bun + TypeScript, Nx monorepo | Project kecil satu aplikasi → single repo |
-| API | Hono (Bun / Cloudflare Workers) | Hanya Bun + butuh end-to-end types → ElysiaJS; throughput sangat tinggi → Go Fiber; tim PHP / CRUD admin berat → Laravel |
-| Public web | Next.js App Router (SSR/SSG untuk SEO) | Tidak butuh SEO → React + Vite / Vue |
-| Admin dashboard | React + Vite atau Vue | Admin sangat sederhana → protected routes di aplikasi yang sama |
+| Runtime & monorepo | Bun + TypeScript, Nx monorepo | Small single app → single repo |
+| API | Hono (Bun / Cloudflare Workers) | Bun-only and need end-to-end types → ElysiaJS; very high throughput → Go Fiber; PHP team or heavy admin CRUD → Laravel |
+| Public web | Next.js App Router (SSR/SSG for SEO) | No SEO needed → React + Vite or Vue |
+| Admin dashboard | React + Vite or Vue | Very simple admin → protected routes in the same app |
 | UI | shadcn/ui + Tailwind CSS | — |
-| Validasi & kontrak | Zod, package `contracts` bersama untuk FE & BE | — |
-| Database | PostgreSQL + Drizzle atau Prisma | Full di Workers → Cloudflare D1 |
-| Auth | better-auth | SSO institusi → OAuth/OIDC |
-| File | Cloudflare R2 / storage kompatibel S3 | — |
-| Notifikasi | WhatsApp / Telegram Bot / email | — |
-| Deploy | Docker + VPS, atau Cloudflare | — |
+| Validation & contracts | Zod, shared `contracts` package for FE and BE | — |
+| Database | PostgreSQL + Drizzle or Prisma | All-in on Workers → Cloudflare D1 |
+| Auth | better-auth | Institutional SSO → OAuth/OIDC |
+| Files | Cloudflare R2 or S3-compatible storage | — |
+| Notifications | WhatsApp / Telegram Bot / email | — |
+| Deploy | Docker + VPS, or Cloudflare | — |
 
-### Katalog layer (opsi untuk TP)
+### Layer catalog (options for TP)
 
-| Layer | Opsi |
+| Layer | Options |
 |---|---|
 | Frontend | Next.js · React (Vite) · TanStack Start · React Router 7 / Remix · Astro · Vue.js · Nuxt · SvelteKit · Angular · None (API only) |
 | Backend | Next.js Route Handlers / Server Actions · Nuxt server · Node.js (Express / Fastify / NestJS) · Hono · ElysiaJS (Bun) · Deno · Python (FastAPI / Django) · Go (Fiber / Echo) · Rust (Axum / Actix) · Laravel (PHP) · BaaS (Supabase / Firebase) |
-| Database | PostgreSQL · Neon · Supabase · Prisma Postgres · MySQL · PlanetScale · SQLite / Turso · Cloudflare D1 · MongoDB · Firebase Firestore · Redis (cache/queue, bukan primary) |
+| Database | PostgreSQL · Neon · Supabase · Prisma Postgres · MySQL · PlanetScale · SQLite / Turso · Cloudflare D1 · MongoDB · Firebase Firestore · Redis (cache/queue, not primary) |
 | Deployment | Vercel · Netlify · Cloudflare (Workers / Pages) · Railway · Render · Fly.io · AWS · GCP (Cloud Run) · Azure (App Service) · Hetzner Cloud · DigitalOcean · VPS (manual) · Coolify · Docker / Kubernetes |
 
-Katalog tidak lengkap. Kamu bebas mengetik teknologi lain; skill akan memverifikasi bahwa teknologi tersebut masih aktif dan dirawat sebelum merekomendasikannya.
+The catalog is not exhaustive. You can type any other technology, and the skill will verify that it is still maintained before recommending it.
 
-### Compatibility check
+### Compatibility checks
 
-Skill menjalankan pemeriksaan ini setelah TP dan lagi di B6. Contoh konflik yang dideteksi:
+The skill runs these checks after TP and again in B6. Examples:
 
-| Kombinasi | Yang diperiksa |
+| Combination | What is checked |
 |---|---|
-| Host serverless (Vercel, Netlify, Cloudflare) + backend jangka panjang (Laravel, Django, Go, Rust, NestJS) | Perlu host terpisah atau runtime yang kompatibel serverless |
-| Cloudflare Workers + PostgreSQL / MySQL | Perlu driver/pooler yang kompatibel (Hyperdrive) atau pertimbangkan D1 |
-| Serverless + realtime (chat, live update) | WebSocket persisten tidak cocok → layanan realtime terkelola atau server jangka panjang |
-| Serverless + SQLite file | File lokal tidak persisten → Turso atau D1 |
-| BaaS (Supabase / Firebase) + library auth terpisah | Dua sistem auth → tentukan satu pemilik user dan session |
-| MongoDB / Firestore + data relasional (order, invoice, stok) | Tandai ketidakcocokan; rekomendasikan database relasional |
-| ORM bahasa ≠ bahasa backend | Samakan: TS → Drizzle/Prisma; Go → GORM/sqlc; Rust → SeaORM/sqlx; PHP → Eloquent; Python → SQLAlchemy/Django ORM |
-| Self-hosted (VPS, Coolify, Docker/K8s) | Tanyakan siapa yang mengurus backup, TLS, monitoring, update; K8s untuk app kecil ditandai over-engineering |
-| Pengguna terkonsentrasi di satu wilayah | Pilih region host dan DB yang dekat, dan samakan region app dengan DB |
-| Anggaran gratis/minimal | Cek batas free tier (instance tidur, limit koneksi, kapasitas storage) |
+| Serverless host (Vercel, Netlify, Cloudflare) + long-running backend (Laravel, Django, Go, Rust, NestJS) | Needs a separate host, or a serverless-compatible runtime |
+| Cloudflare Workers + PostgreSQL / MySQL | Needs a driver or pooler that works on Workers (e.g., Hyperdrive), or consider D1 |
+| Serverless + realtime (chat, live updates) | Persistent WebSockets don't fit; use a managed realtime service or a long-running server |
+| Serverless + SQLite file | Local files don't persist; use Turso or D1 |
+| BaaS (Supabase / Firebase) + a separate auth library | Two auth systems; decide which one owns users and sessions |
+| MongoDB / Firestore + relational data (orders, invoices, stock) | Flag the mismatch; recommend a relational database |
+| ORM language ≠ backend language | Match them: TS → Drizzle/Prisma; Go → GORM/sqlc; Rust → SeaORM/sqlx; PHP → Eloquent; Python → SQLAlchemy/Django ORM |
+| Self-hosted (VPS, Coolify, Docker/K8s) | Who handles backups, TLS, monitoring, updates? Kubernetes for a small app is flagged as over-engineering |
+| Users concentrated in one region | Pick host and DB regions close to users; keep the app and DB in the same region |
+| Free or minimal budget | Check free-tier limits (sleeping instances, connection limits, storage caps) |
 
-## Aturan presisi
+## Precision rules
 
-Sebelum PRD ditulis, skill memeriksa aturan berikut:
+Before the PRD is written, the skill checks:
 
-**Phase Dependency Check**
-- Fitur tidak boleh berada di fase lebih awal daripada fitur yang dibutuhkannya.
-- Fitur yang **menampilkan** data harus berada di fase yang sama atau setelah fitur yang **membuat** data tersebut (atau ada seed yang direncanakan).
-- Fitur yang membutuhkan login tidak boleh mendahului fitur auth.
-- Core value dari B1 harus hadir di Fase 1.
-- Pemicu retensi dari B1 harus punya fitur yang mengirimkannya.
+**Phase dependency check**
+- A feature may not sit in an earlier phase than the features it depends on.
+- A feature that **displays** data must be in the same phase as, or a later phase than, the feature that **creates** that data (or a planned seed must exist).
+- Features that require login may not precede the auth feature.
+- The core value from B1 must be present in Phase 1.
+- The retention trigger from B1 must have a feature that delivers it.
 
 **Spec quality**
-- Setiap sub-fitur punya minimal satu acceptance criteria Given/When/Then.
-- Setiap sub-fitur terhubung ke entitas (B5), endpoint (jika ada), dan role (B2).
-- Kata sifat tanpa ukuran tidak diterima: "cepat" → `p95 < 500 ms`; "banyak" → `≤ 5.000 desain`.
-- Setiap pilihan stack punya kolom "Reason" yang merujuk ke requirement, bukan selera.
-- Fitur tanpa role, tanpa sumber data, atau tanpa keterkaitan dengan job B1 diusulkan untuk dihapus atau dipindah ke Non-goals.
+- Every sub-feature has at least one Given/When/Then acceptance criterion.
+- Every sub-feature maps to entities (B5), endpoints (if any), and roles (B2).
+- No unmeasured adjectives: "fast" → `p95 < 500 ms`; "a lot" → `≤ 5,000 designs`.
+- Every stack choice has a "Reason" that refers to a requirement, not taste.
+- A feature with no role, no data source, or no link to the B1 job is proposed for removal or moved to Non-goals.
 
 ## Output
 
-Dua artifact dihasilkan:
+Two artifacts are produced:
 
-1. **`PRD.md`** — dokumen lengkap (13 bagian: ringkasan, masalah & JTBD, tujuan & metrik, aktor & matriks role, feature map, spesifikasi fitur, data model, API surface, arsitektur & stack, NFR, fase, decision log, asumsi & pertanyaan terbuka).
-2. **`feature-map.json`** — skema terstruktur untuk membuat feature map visual, memecah menjadi tiket, atau scaffolding.
+1. **`PRD.md`**: the full document, with 13 sections (summary, problem and JTBD, goals and metrics, actors and role matrix, feature map, feature specifications, data model, API surface, architecture and stack, NFRs, phase plan, decision log, assumptions and open questions).
+2. **`feature-map.json`**: a structured schema for rendering a feature map, turning features into tickets, or scaffolding.
 
-Jika bekerja di dalam codebase, file disimpan di:
+Inside a codebase they are saved to:
 
 ```
 docs/prd/<slug>/PRD.md
 docs/prd/<slug>/feature-map.json
 ```
 
-Di luar codebase, keduanya dibuat sebagai dokumen di chat.
+Outside a codebase, both are delivered as documents in the chat.
 
-### Contoh `feature-map.json` (ringkas)
+### Example `feature-map.json` (abridged)
 
 ```json
 {
   "project": { "name": "Billboard Design Portal", "slug": "billboard-design-portal", "status": "planning", "version": "0.1" },
   "phases": [
-    { "id": 1, "name": "MVP Catalog & Pricing", "goal": "Pemerintah desa bisa melihat desain beserta harga dan menghubungi admin" }
+    { "id": 1, "name": "MVP Catalog & Pricing", "goal": "Village governments can browse designs with prices and contact the admin" }
   ],
   "stack": {
     "mode": "user",
@@ -271,42 +302,42 @@ Di luar codebase, keduanya dibuat sebagai dokumen di chat.
 }
 ```
 
-Aturan skema:
+Schema rules:
 - `status`: `planned | in_progress | done | dropped`
 - `priority`: `must | should | could | wont`
-- `icon`: nama ikon lucide (mis. `layout-grid`, `search`, `shopping-cart`)
-- ID stabil: `F-<KODE>` untuk fitur, `F-<KODE>-NN` untuk sub-fitur. ID yang sama dipakai di `PRD.md` dan JSON.
-- `dependsOn` hanya berisi ID fitur yang ada.
-- `stack.mode`: `ai | user`. Setiap layer punya `source`: `user | ai | assumption`.
+- `icon`: a lucide icon name (e.g., `layout-grid`, `search`, `shopping-cart`)
+- Stable IDs: `F-<CODE>` for features, `F-<CODE>-NN` for sub-features. The same ID is used in `PRD.md` and the JSON.
+- `dependsOn` contains only existing feature IDs.
+- `stack.mode`: `ai | user`. Each layer's `source`: `user | ai | assumption`.
 
-## Struktur repo
+## Repository structure
 
 ```
 grill-prd/
-├── SKILL.md    # Definisi skill (frontmatter + instruksi lengkap)
-├── README.md   # Dokumentasi ini
-└── LICENSE     # Lisensi MIT
+├── SKILL.md    # Skill definition (frontmatter + full instructions)
+├── README.md   # This document
+└── LICENSE     # MIT license
 ```
 
 ## FAQ
 
-**Apakah saya harus menjawab semua pertanyaan?**
-Tidak. Jawab `ok` untuk menerima rekomendasi, atau `skip` untuk ditandai sebagai asumsi. Skill berhenti menggali saat Definition of Ready terpenuhi atau kamu minta langsung ditulis.
+**Do I have to answer every question?**
+No. Reply `ok` to accept a recommendation, or `skip` to have it recorded as an assumption. The skill stops grilling once the Definition of Ready is met, or when you ask it to write the PRD.
 
-**Bagaimana kalau saya belum punya stack?**
-Pilih `Let AI pick`. Skill memilih default yang sesuai kebutuhan di B6 dan mencatat alasannya.
+**What if I don't have a stack yet?**
+Choose `Let AI pick`. The skill selects defaults that fit your requirements in B6 and records the reasons.
 
-**Bagaimana kalau saya sudah punya stack tertentu?**
-Sebutkan per layer di tahap TP. Pilihanmu dianggap sebagai constraint. Jika ada konflik, skill menanyakannya dulu sebelum mengubah apa pun.
+**What if I already have a stack in mind?**
+Name your choices per layer in the TP stage. Your picks are treated as constraints. If there's a conflict, the skill asks you before changing anything.
 
-**Apakah skill menulis kode?**
-Tidak. Skill hanya menghasilkan dokumen PRD dan feature map. Implementasi dilakukan setelahnya.
+**Does the skill write code?**
+No. It produces the PRD and feature map only. Implementation comes afterward.
 
-**Bahasa apa yang digunakan?**
-Instruksi di `SKILL.md` berbahasa Inggris, tetapi kamu bisa menjawab dalam bahasa apa pun, termasuk Bahasa Indonesia. Bahasa dokumen PRD tidak diatur secara eksplisit di `SKILL.md`, jadi sebutkan bahasa yang kamu mau di awal sesi.
+**What language is used?**
+`SKILL.md` is in English, but you can answer in any language. The PRD's document language is not set explicitly in `SKILL.md`, so state the language you want at the start of the session.
 
-## Lisensi & kredit
+## License and credits
 
-- Ide dan kerangka wawancara (grilling) diadaptasi dari skill `grill-me` di [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).
-- Lisensi untuk `grill-prd` itu sendiri: [MIT](./LICENSE) © 2026 rezkycodes.
-- Bagian yang diadaptasi dari `grill-me` tetap tunduk pada lisensi MIT aslinya.
+- The interview method is adapted from the `grill-me` skill in [mattpocock/skills](https://github.com/mattpocock/skills) (MIT).
+- `grill-prd` is licensed under the [MIT License](./LICENSE) © 2026 rezkycodes.
+- Parts adapted from `grill-me` remain subject to the original MIT license.
